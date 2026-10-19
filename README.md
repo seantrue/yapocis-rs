@@ -87,8 +87,11 @@ Parity fixtures need a device, so record them on each machine for its own
 devices, e.g. `--parity metal,ocl --parity-lib metal,ocl` on a Mac and
 `--parity cuda,ocl --parity-lib cuda,ocl` on an NVIDIA machine.
 
-`scripts/check-bundle.sh` regenerates into a temporary directory and diffs the
-manifest, sources and derivation fixtures against the vendored copy.
+`scripts/check-bundle.sh` regenerates into a temporary directory and compares
+the manifest, sources and derivation fixtures with the vendored copy
+(`scripts/compare-bundle.py`). Float literals are compared to 12 significant
+digits, because numpy can round the rendered Gaussian weights differently in the
+last bit on different CPUs; everything else must match exactly.
 
 ## Scope
 

@@ -12,13 +12,11 @@ trap 'rm -rf "$tmp"' EXIT
 
 "$tools" bundle --out "$tmp" --fixtures >/dev/null
 
+# Float literals are compared to 12 significant digits: numpy can round the
+# rendered Gaussian weights differently in the last bit on different CPUs.
 status=0
-for sub in manifest.json ocl metal cuda fixtures; do
-    if ! diff -r "$tmp/$sub" "$here/crates/yapocis/bundle/$sub"; then
-        echo "bundle drift in $sub" >&2
-        status=1
-    fi
-done
+python3 "$here/scripts/compare-bundle.py" "$tmp" "$here/crates/yapocis/bundle" \
+    manifest.json ocl metal cuda fixtures || status=1
 if [ "$status" -eq 0 ]; then
     echo "bundle is up to date"
 fi
