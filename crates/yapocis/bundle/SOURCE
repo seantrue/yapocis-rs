@@ -1,0 +1,5 @@
+ref: d0fc1efbe4fb70e3a3500ee5a55fbb67e9efc410
+repository: https://github.com/seantrue/Yapocis3
+commit: Kernel bundle exporter for the Rust port (yapocis-tools bundle)
+generated: 2026-10-19, yapocis-tools bundle --fixtures on thresher (manifest, sources, derivation fixtures)
+parity: --parity/--parity-lib metal,ocl on thresher (Apple M4 Max); cuda,ocl on yellowfin (NVIDIA GeForce RTX 3080)

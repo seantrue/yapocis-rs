@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Linux only: no GPU on hosted runners, so build every backend (Metal is
+  # macOS-only and is checked on the maintainer's machine), lint, and run the
+  # device-free tests. GPU parity runs on thresher and yellowfin.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      # opencl3 links libOpenCL at build time (FreeType is built from source)
+      - run: sudo apt-get update && sudo apt-get install -y ocl-icd-opencl-dev
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo build --workspace --all-targets --features yapocis/ocl,yapocis/cuda
+      - run: cargo clippy --workspace --all-targets --features yapocis/ocl,yapocis/cuda -- -D warnings
+      - run: cargo test -p yapocis-bundle
+      - run: cargo test -p yapocis --lib
+      - run: cargo doc -p yapocis --no-deps --features yapocis/ocl,yapocis/cuda
+
+  # The vendored bundle must match what the pinned Python package renders.
+  bundle-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install the Python package that generated the bundle
+        run: pip install "git+https://github.com/seantrue/Yapocis3@$(cat crates/yapocis/bundle/SOURCE | sed -n 's/^ref: //p')"
+      - run: scripts/check-bundle.sh

@@ -1,0 +1,41 @@
+[package]
+name = "yapocis-rt"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+description = "Runtime for yapocis kernel bundles: OpenCL, Metal and CUDA devices, buffers, program compilation and launches"
+keywords = ["gpu", "opencl", "metal", "cuda", "image-processing"]
+categories = ["science"]
+
+[features]
+default = []
+ocl = ["dep:opencl3"]
+metal = ["dep:objc2", "dep:objc2-foundation", "dep:objc2-metal"]
+cuda = ["dep:cudarc"]
+
+[dependencies]
+yapocis-bundle = { path = "../yapocis-bundle", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+sha2.workspace = true
+dirs.workspace = true
+bytemuck.workspace = true
+num-complex.workspace = true
+half.workspace = true
+opencl3 = { workspace = true, optional = true }
+cudarc = { workspace = true, optional = true, features = ["driver", "nvrtc", "dynamic-loading", "cuda-12050"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = { workspace = true, optional = true }
+objc2-foundation = { workspace = true, optional = true }
+objc2-metal = { workspace = true, optional = true }
+
+[package.metadata.docs.rs]
+all-features = true
+targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin"]

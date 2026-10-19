@@ -1,0 +1,50 @@
+[package]
+name = "yapocis"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+description = "Call yapocis GPU kernels (OpenCL, Metal, CUDA) from Rust with no Python at runtime"
+keywords = ["gpu", "opencl", "metal", "cuda", "image-processing"]
+categories = ["science", "multimedia::images"]
+include = ["src/**", "build.rs", "bundle/manifest.json", "bundle/ocl/**", "bundle/metal/**", "bundle/cuda/**", "fonts/**", "models/**", "README.md"]
+
+[features]
+default = ["text"]
+# FreeType text rasterisation (lib::typeset, draw_strings); FreeType is built from source.
+text = ["dep:freetype-rs"]
+ocl = ["yapocis-rt/ocl"]
+metal = ["yapocis-rt/metal"]
+cuda = ["yapocis-rt/cuda"]
+
+[dependencies]
+yapocis-rt = { path = "../yapocis-rt", version = "0.1.0" }
+yapocis-bundle = { path = "../yapocis-bundle", version = "0.1.0" }
+ndarray.workspace = true
+bytemuck.workspace = true
+num-complex = { workspace = true }
+half = { workspace = true }
+thiserror.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+freetype-rs = { version = "0.38", optional = true, features = ["bundled"] }
+earcutr = "0.5"
+ndarray-npy.workspace = true
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+
+[build-dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+ndarray-npy.workspace = true
+approx.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin"]

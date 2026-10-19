@@ -1,0 +1,16 @@
+[package]
+name = "yapocis-bundle"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+description = "Kernel bundle schema for yapocis: parsed interfaces, argument derivation and dispatch sizing, no GPU dependencies"
+keywords = ["gpu", "opencl", "metal", "cuda", "image-processing"]
+categories = ["science"]
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
