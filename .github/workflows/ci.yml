@@ -38,5 +38,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install the Python package that generated the bundle
-        run: pip install "git+https://github.com/seantrue/Yapocis3@$(cat crates/yapocis/bundle/SOURCE | sed -n 's/^ref: //p')"
+        run: |
+          ref="$(sed -n 's/^ref: //p' crates/yapocis/bundle/SOURCE)"
+          pip install "git+https://github.com/seantrue/Yapocis3@${ref}"
       - run: scripts/check-bundle.sh
