@@ -1,7 +1,6 @@
 # yapocis-rs
 
-Call the [yapocis](https://github.com/seantrue/Yapocis3) GPU image-processing
-kernels from Rust on OpenCL, Metal and CUDA, with no Python at runtime.
+*yapocis-rs* provides platform independent Rust access to GPU kernels running in OpenCL, Metal, and Cuda, that is based on the Python package [yapocis](https://github.com/seantrue/Yapocis3) GPU image-processing kernels. There is _no_ requirement for Python at Rust run time.
 
 The Python package stays the single source of truth for the kernels: its
 interface definitions, Mako templates and YAML contexts are rendered by
