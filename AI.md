@@ -11,11 +11,15 @@ The maintainer (Sean True) owns yapocis, the Python package whose kernels this r
 - The Rust code lives in a separate repository, consuming a kernel bundle that the Python package exports at build time.
 - Runtime-parameterised kernels (arbitrary convolution weights) are handled by enumerating variants at build time.
 - The first release covers all interface kernels plus the library wrappers.
-- CUDA goes through NVRTC via `cudarc`, pinned to the CUDA 12.x bindings so the Pascal P40 on yellowfin keeps working.
+- CUDA goes through NVRTC via `cudarc`, pinned to the CUDA 12.x bindings so the Pascal P40 on the Linux host keeps working.
 
 Later direction and corrections are credited in the entries below.
 
 ## Contributions
+
+### 2026-10-20 — Machine names replaced with generic descriptions (Claude Opus 5.5)
+
+The maintainer asked for the names of their two machines to be replaced in the repository: one becomes "the Linux host" and the other "the M4 MacBook". The change covers 16 lines in `AI.md`, `CLAUDE.md`, `bundle/SOURCE`, the CI workflow and two comments in `yapocis-rt`. The README never named them. Two matches were left alone, because they are an ImageNet class label in the VGG16 and ResNet50 `classes.txt` files, not a machine. Only text and comments changed.
 
 ### 2026-10-19 — Repository prepared for its first commit (Claude Opus 5.5)
 
@@ -23,7 +27,7 @@ Later direction and corrections are credited in the entries below.
 
 **What the AI did.**
 
-- **Bundle provenance:** the exporter was committed to Yapocis3 first (`d0fc1ef`, PR #54; that repository's AI.md has the entry). The bundle was regenerated from that commit, and `crates/yapocis/bundle/SOURCE` pins it by SHA, which CI's drift job installs. No tag was made. Before merging, the PR was rebased onto `main` to resolve an `AI.md` conflict, which rewrote the commit as `a9aba38`. Claude had told the maintainer the rebase would keep the pinned SHA, which was wrong; the maintainer then said "Merge and fix", and `SOURCE` now pins `a9aba38`, which is on Yapocis3's `main` through merge commit `2940fee`. The rebase changed only Yapocis3's `AI.md`, not the exporter. The regenerated manifest, sources and derivation fixtures were byte-identical to the vendored ones, so only the parity fixtures changed. Exports on thresher (macOS) and yellowfin (Linux) were also identical except for `yapocis_version`, which is read from the installed package metadata; yellowfin's venv has an old 0.3.8 install, so the vendored manifest is thresher's (1.0.0).
+- **Bundle provenance:** the exporter was committed to Yapocis3 first (`d0fc1ef`, PR #54; that repository's AI.md has the entry). The bundle was regenerated from that commit, and `crates/yapocis/bundle/SOURCE` pins it by SHA, which CI's drift job installs. No tag was made. Before merging, the PR was rebased onto `main` to resolve an `AI.md` conflict, which rewrote the commit as `a9aba38`. Claude had told the maintainer the rebase would keep the pinned SHA, which was wrong; the maintainer then said "Merge and fix", and `SOURCE` now pins `a9aba38`, which is on Yapocis3's `main` through merge commit `2940fee`. The rebase changed only Yapocis3's `AI.md`, not the exporter. The regenerated manifest, sources and derivation fixtures were byte-identical to the vendored ones, so only the parity fixtures changed. Exports on the M4 MacBook (macOS) and the Linux host were also identical except for `yapocis_version`, which is read from the installed package metadata; the Linux host's venv has an old 0.3.8 install, so the vendored manifest is the M4 MacBook's (1.0.0).
 - **Per-device parity fixtures:** fixtures moved from `parity/<backend>/` to `parity/<backend>/<device>/` (and the same under `parity/lib/`). The test helpers open the backend's default device, take its name as a directory slug (`device_slug`, matching the Python exporter's rule, with a unit test), and skip with a message when nothing was recorded on that device. Sets are vendored for the Apple M4 Max (Metal, OpenCL) and the RTX 3080 (CUDA, NVIDIA OpenCL).
 - **Cleanup:** the throwaway Phase 0 `spike/` crate left the workspace (archived in Yapocis3's untracked `claude-debug/rust_port_spike/`). Added `publish = false` on the three crates, `.idea/` in `.gitignore`, `cargo fmt` across the workspace (2 files were unformatted), this ledger and `CLAUDE.md`.
 - **CI actions on Node 24** (maintainer: "bump the actions to Node 24 versions", after GitHub warned that `checkout@v4` and `setup-python@v5` target the deprecated Node 20): now `actions/checkout@v7` and `actions/setup-python@v7`, checked to declare `using: node24`. `Swatinem/rust-cache@v2` already runs on Node 24, and `dtolnay/rust-toolchain` is a composite action.
@@ -31,13 +35,13 @@ Later direction and corrections are credited in the entries below.
 
 **Verification.**
 
-- 72 of 72 tests pass on thresher (Metal, OpenCL) and on yellowfin (CUDA, NVIDIA OpenCL) against the vendored per-device fixtures. That includes the slug test, and the two cross-device failures below no longer occur.
+- 72 of 72 tests pass on the M4 MacBook (Metal, OpenCL) and on the Linux host (CUDA, NVIDIA OpenCL) against the vendored per-device fixtures. That includes the slug test, and the two cross-device failures below no longer occur.
 - `scripts/check-bundle.sh` reports the bundle up to date against `d0fc1ef`; after the re-pin, CI's drift job checks it against `a9aba38`.
-- On yellowfin (Linux), `cargo fmt --check`, clippy with `-D warnings` (OpenCL, CUDA), the device-free tests and `cargo doc` all pass with the CI commands. `cargo doc` had 2 warnings (an unescaped `[2]` and a redundant link target), both fixed. The workflow itself had not run on GitHub at the time of writing.
+- On the Linux host, `cargo fmt --check`, clippy with `-D warnings` (OpenCL, CUDA), the device-free tests and `cargo doc` all pass with the CI commands. `cargo doc` had 2 warnings (an unescaped `[2]` and a redundant link target), both fixed. The workflow itself had not run on GitHub at the time of writing.
 
 **Defects in AI-written code.**
 
-- The parity fixtures were keyed by backend only. OpenCL fixtures recorded on the Apple M4 Max failed two tests on NVIDIA's OpenCL (`parity_with_python_outputs`: one Mandelbrot pixel at 6 vs 7 iterations; `simplex_matches_python`: `noise3d` element 223). This was caught by running the suite on yellowfin. With fixtures recorded on the RTX 3080 both tests pass, so it was a cross-device comparison rather than a runtime bug. The per-device layout above fixes it.
+- The parity fixtures were keyed by backend only. OpenCL fixtures recorded on the Apple M4 Max failed two tests on NVIDIA's OpenCL (`parity_with_python_outputs`: one Mandelbrot pixel at 6 vs 7 iterations; `simplex_matches_python`: `noise3d` element 223). This was caught by running the suite on the Linux host. With fixtures recorded on the RTX 3080 both tests pass, so it was a cross-device comparison rather than a runtime bug. The per-device layout above fixes it.
 - The Python parity exporter recorded the CUDA device as `<bound method name of <pycuda._driver.Device ...>>` (pycuda's `Device.name` is a method). This was caught by reading `index.json` while designing the per-device layout, and fixed in Yapocis3.
 - The `text` feature's comment in `crates/yapocis/Cargo.toml` said it needed the system FreeType library, but the dependency builds FreeType from source (`bundled`). This was caught while writing the CI install step, and the comment was corrected.
 - The drift check compared exported files byte for byte, which made it flaky. On one hosted runner, the same Yapocis3 commit, Ubuntu image, CPython 3.13.16 and numpy 2.5.4 rendered some Gaussian weights one digit apart in the 17th significant digit (`0.0028602900165330333` vs `…338`). The weights come from numpy `exp`/`sum`, whose SIMD paths depend on the CPU. A rerun on the same commit passed; the runner's CPU was not recorded. It was caught by CI on the action-bump commit. The maintainer chose "Tolerate drift" over making the Python weights deterministic. `scripts/compare-bundle.py` now rounds float literals to 12 significant digits before comparing (the kernels compute in float32) and compares everything else exactly. The first version of that fix still failed in CI, because the manifest's per-source SHA-256 changes with the same noise. The scratch test had edited a source without updating its hash, which a real export never does. Hashes are now left out of the comparison, and each vendored hash is checked against its vendored file instead. The scratch test now updates the hash with every source edit. It checks that the CI last-digit change passes, and that a 6th-digit weight change, an integer index change, a text change, an extra file, a missing file and a stale vendored hash each fail.
@@ -62,10 +66,10 @@ Later direction and corrections are credited in the entries below.
 **Defects in AI-written code, and how each was caught.**
 
 - **Double host copy on outputs.** Every `out_like` output was downloaded into a `Vec<u8>` and then copied into a `Vec<T>`. Writing 16 MB into fresh pages costs about 11 ms in page faults, so Rust was 3x slower than Python on CUDA for large arrays (`operators.add` 2048²: 28.4 ms vs 9.4 ms). Caught by the first benchmark run.
-- **Huge-page hint enabled by default.** The first version of the fix turned the hint on. On yellowfin (`defrag=madvise`) it made some processes stall in synchronous compaction: 220 ms instead of 43 ms per 64 MB output, with 377 `compact_stall`s per run. Caught by bimodal benchmark runs; the hint is now opt-in.
-- **pocl segfault.** Running the tests with `ocl` on yellowfin segfaulted about 1 run in 7, inside pocl's `clGetDeviceInfo`, while parallel test threads enumerated devices. Caught on the first OpenCL run there; the open lock fixed it (0 failures in 30 runs).
+- **Huge-page hint enabled by default.** The first version of the fix turned the hint on. On the Linux host (`defrag=madvise`) it made some processes stall in synchronous compaction: 220 ms instead of 43 ms per 64 MB output, with 377 `compact_stall`s per run. Caught by bimodal benchmark runs; the hint is now opt-in.
+- **pocl segfault.** Running the tests with `ocl` on the Linux host segfaulted about 1 run in 7, inside pocl's `clGetDeviceInfo`, while parallel test threads enumerated devices. Caught on the first OpenCL run there; the open lock fixed it (0 failures in 30 runs).
 - **Resident parameters written on every call.** The untyped API uploaded a host array passed to a `resident` parameter on every call. Caught by the maintainer.
-- **`set_margin` visited every pixel.** It visited every pixel with a bounds-checked write: 12.9 ms at 2048² on yellowfin and 4.1 ms on thresher, now 0.66 ms and 0.15 ms. Caught by a per-stage timing of `zcsdog`.
+- **`set_margin` visited every pixel.** It visited every pixel with a bounds-checked write: 12.9 ms at 2048² on the Linux host and 4.1 ms on the M4 MacBook, now 0.66 ms and 0.15 ms. Caught by a per-stage timing of `zcsdog`.
 
 **Found and not changed (library behaviour shared with Python).**
 
@@ -73,7 +77,7 @@ Later direction and corrections are credited in the entries below.
 - Python documents a 256-point limit for `fft.batch_forward` but does not enforce it; Rust rejects larger sizes.
 - The first CUDA call after load takes 10.9 ms in Rust and 1.1 ms in Python. The likely cause is the driver compiling PTX on first use; this is not verified.
 
-**Verification.** 71 of 71 tests pass on thresher (Metal, OpenCL) and on yellowfin (CUDA, NVIDIA OpenCL, with OpenCL fixtures recorded there). Clippy is clean on both.
+**Verification.** 71 of 71 tests pass on the M4 MacBook (Metal, OpenCL) and on the Linux host (CUDA, NVIDIA OpenCL, with OpenCL fixtures recorded there). Clippy is clean on both.
 
 ### 2026-10-18 — The port: bundle crate, runtime, generated API and library ports (Claude Opus 5.5)
 

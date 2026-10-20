@@ -11,7 +11,7 @@ env:
 jobs:
   # Linux only: no GPU on hosted runners, so build every backend (Metal is
   # macOS-only and is checked on the maintainer's machine), lint, and run the
-  # device-free tests. GPU parity runs on thresher and yellowfin.
+  # device-free tests. GPU parity runs on the M4 MacBook and the Linux host.
   build:
     runs-on: ubuntu-latest
     steps:

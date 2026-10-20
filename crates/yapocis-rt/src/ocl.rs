@@ -39,7 +39,7 @@ unsafe impl Send for OclDevice {}
 unsafe impl Sync for OclDevice {}
 
 /// Serialises device enumeration and context creation. pocl (the CPU
-/// platform installed next to NVIDIA's on yellowfin) crashes in
+/// platform installed next to NVIDIA's on the Linux host) crashes in
 /// `clGetDeviceInfo` when several threads enumerate devices at once, which
 /// parallel tests that each open a device do.
 static OPEN_LOCK: Mutex<()> = Mutex::new(());

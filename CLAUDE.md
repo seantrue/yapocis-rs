@@ -15,11 +15,11 @@ Rust runtime for the [yapocis](https://github.com/seantrue/Yapocis3) GPU kernels
 ```bash
 cargo fmt --all
 cargo clippy --workspace --all-targets --features yapocis/ocl,yapocis/metal -- -D warnings   # macOS
-cargo test --release --features yapocis/ocl,yapocis/metal                                     # thresher (this Mac)
+cargo test --release --features yapocis/ocl,yapocis/metal                                     # M4 MacBook
 cargo test -p yapocis-bundle                                                                  # no GPU
 ```
 
-CUDA and NVIDIA OpenCL run on yellowfin (Linux, RTX 3080 default, plus a 3060 and a P40), from a clone of this repository:
+CUDA and NVIDIA OpenCL run on the Linux host (RTX 3080 default, plus a 3060 and a P40), from a clone of this repository:
 
 ```bash
 export LD_LIBRARY_PATH=/usr/local/cuda-12.5/lib64 YAPOCIS_MODELS=/data/models/yapocis3

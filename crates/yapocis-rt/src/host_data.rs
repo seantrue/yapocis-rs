@@ -9,7 +9,7 @@
 //! huge pages (`MADV_HUGEPAGE`). It is off by default: with the common
 //! `defrag=madvise` setting every huge-page fault may compact memory
 //! synchronously, so on a host with fragmented memory a 64 MB output took
-//! 220 ms instead of 43 ms (yellowfin, 2026-10-19), while without the hint it
+//! 220 ms instead of 43 ms (Linux host, 2026-10-19), while without the hint it
 //! took a steady 65 ms.
 
 use crate::buffer::Element;
