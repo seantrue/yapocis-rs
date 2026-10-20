@@ -1,4 +1,4 @@
-ref: d0fc1efbe4fb70e3a3500ee5a55fbb67e9efc410
+ref: a9aba38d5c2445d72c36894c70feb38d594fb935
 repository: https://github.com/seantrue/Yapocis3
 commit: Kernel bundle exporter for the Rust port (yapocis-tools bundle)
 generated: 2026-10-19, yapocis-tools bundle --fixtures on thresher (manifest, sources, derivation fixtures)
