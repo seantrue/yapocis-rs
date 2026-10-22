@@ -16788,7 +16788,7 @@
         },
         "cuda": {
           "path": "cuda/truetrace.cu",
-          "sha256": "02e6ac3c7db29414ba806e255c0c5eb0aed1c0cbfd8a41c3c4a3635dc901fc6d",
+          "sha256": "ff38c702da87b3a3b7e3efc5dc126584785a7de96f3ea7ef3fa5cd2e1316f5bb",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",

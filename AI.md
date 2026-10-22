@@ -17,6 +17,15 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-10-22 — truetrace on CUDA no longer transposed: vendored kernel and RTX 3080 fixtures (Claude Opus 5.5)
+
+Yapocis3's CUDA truetrace kernel addressed `x` as the fast axis while its wrapper passes `(W, H)` arrays with `x` slow, so on CUDA every traced shape came out transposed (recorded in Yapocis3's AI.md, fixed on its `dev` branch in `a42bfab`). This repository vendors that kernel, so the Rust port had the same bug. It showed when the Rust worker's CUDA dry run on yellowfin was compared with OpenCL.
+
+- `crates/yapocis/bundle/cuda/truetrace.cu` and its sha256 in `manifest.json` are re-exported from Yapocis3 `dev`; no other bundle file changed.
+- The RTX 3080's truetrace library fixtures (`parity/lib/cuda/nvidia-geforce-rtx-3080/truetrace.*` and their `index.json` entry, other generators untouched) were re-recorded on yellowfin with `yapocis-tools bundle --parity-lib cuda --generators truetrace`. The old ones had recorded the transposed output, and also predated the scanline fill and exact chaining.
+
+**Defect record.** The CUDA fixtures were recorded on 2026-10-19 from the transposing kernel, so a CUDA parity replay would have enforced the bug. They had not been replayed on yellowfin since the truetrace changes.
+
 ### 2026-10-21 — truetrace: exact chaining and `off_field_iso` (Claude Opus 5.5)
 
 **What the maintainer asked for.** "Defaut to .75, fix in yapicis-rs": mirror Yapocis3's fix for truetrace above iso 0.5, where 0.25 px endpoint snapping fused the two outlines of 1 px strokes into black wedges.
