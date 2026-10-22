@@ -15,9 +15,14 @@
 //! * [`launch`]: per-backend default global sizes and the CUDA grid/block and
 //!   Metal grid/threadgroup geometry.
 //!
+//! [`codegen`] generates the typed Rust API for a bundle (one struct per
+//! interface variant), for the `yapocis` crate's `build.rs` and for crates that
+//! vendor another project's bundle.
+//!
 //! The Python package also exports `fixtures/derivation.json`, which the tests
 //! replay to prove these rules match the reference implementation.
 
+pub mod codegen;
 pub mod derive;
 pub mod dispatch;
 pub mod launch;

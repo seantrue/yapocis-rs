@@ -35,8 +35,13 @@ fn custom_weights_match_cpu_and_bundled_variant() {
         let cnv = Convolve1D::new(&device, "k7", &w7).unwrap();
         let out = cnv.convolve(&a.view()).unwrap();
         let want = cpu_convolve(&signal, &w7);
-        common::allclose_f32(out.as_slice().unwrap(), &want, 1e-5, 1e-5)
-            .unwrap_or_else(|e| panic!("{device:?}: {e}"));
+        common::allclose_f32(
+            out.as_slice().unwrap(),
+            &want,
+            common::tolerances(1e-5, 1e-5).0,
+            common::tolerances(1e-5, 1e-5).1,
+        )
+        .unwrap_or_else(|e| panic!("{device:?}: {e}"));
 
         // Same weights as the bundled variant: identical source, identical output.
         let box3 = [0.3333333333, 0.3333333333, 0.3333333333];

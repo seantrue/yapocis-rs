@@ -134,6 +134,17 @@ pub fn read_array<T: ndarray_npy::ReadableElement>(
         .unwrap_or_else(|e| panic!("{name}: {e}"))
 }
 
+/// The tolerances a test should use: its defaults, or zero (exact value
+/// equality) when `YAPOCIS_PARITY_EXACT` is set, to find out which ports
+/// already match Python bit for bit on this device.
+pub fn tolerances(rtol: f64, atol: f64) -> (f64, f64) {
+    if std::env::var_os("YAPOCIS_PARITY_EXACT").is_some() {
+        (0.0, 0.0)
+    } else {
+        (rtol, atol)
+    }
+}
+
 /// numpy-style `allclose` over f32 arrays (NaNs equal); returns the worst offender.
 pub fn allclose_f32(got: &[f32], want: &[f32], rtol: f64, atol: f64) -> Result<(), String> {
     if got.len() != want.len() {

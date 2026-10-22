@@ -32,13 +32,11 @@ impl TrueTrace {
 
     /// `TrueTrace.trace_segments(mask_u8, iso=0.0)`: segments of the iso-contour
     /// of the signed distance field of an `H×W` mask (non-zero is foreground),
-    /// plus `(W, H)`.
-    ///
-    /// Every launch uses one thread per pixel. (The Python wrapper lets the
-    /// backend infer the global size; on OpenCL and CUDA the `np.int32(jump)`
-    /// scalar is the first argument with a `.size`, so `jfa_step` runs a single
-    /// thread there and the distance field is never propagated, which only
-    /// shows for `iso != 0`.)
+    /// plus `(W, H)`. The field is the jump-flood distance to the background
+    /// minus the distance to the foreground (positive inside, the convention of
+    /// `sdf_from_mask_cpu`), so iso 0 is the boundary between the two pixel
+    /// classes. Every launch uses one thread per pixel, as the Python wrapper
+    /// does since 2026-10-21.
     pub fn trace_segments(
         &self,
         mask: &ArrayView2<'_, u8>,
@@ -51,42 +49,19 @@ impl TrueTrace {
                 m[x * h + y] = (mask[[y, x]] != 0) as i32;
             }
         }
+        let inverse: Vec<i32> = m.iter().map(|&v| 1 - v).collect();
         let device = self.kernels.device().clone();
-        let program = self.kernels.program();
-        let m_dev = device.upload(&m, &[w, h])?;
-        let seed_a = device.upload(&vec![-1.0f32; w * h * 4], &[w, h, 4])?;
-        let seed_b = device.upload(&vec![-1.0f32; w * h * 4], &[w, h, 4])?;
-        let dist = device.upload(&vec![INF32; w * h], &[w, h])?;
         let opts = CallOptions {
             global: Some(vec![w * h]),
             async_exec: true,
             ..Default::default()
         };
-        let mut args = [
-            CallArg::Buffer(m_dev.as_any()),
-            CallArg::Buffer(seed_a.as_any()),
-            CallArg::Buffer(dist.as_any()),
-        ];
-        program.call("init_seed_from_mask", &mut args, &opts)?;
-
-        let max_dim = w.max(h);
-        let mut jump = 1usize;
-        while (jump << 1) < max_dim {
-            jump <<= 1;
-        }
-        let (mut cur_in, mut cur_out) = (&seed_a, &seed_b);
-        while jump >= 1 {
-            let mut args = [
-                CallArg::Scalar(jump as f64),
-                CallArg::Buffer(cur_in.as_any()),
-                CallArg::Buffer(dist.as_any()),
-                CallArg::Buffer(cur_out.as_any()),
-            ];
-            program.call("jfa_step", &mut args, &opts)?;
-            std::mem::swap(&mut cur_in, &mut cur_out);
-            jump >>= 1;
-        }
-
+        let d_paper = self.nearest(&inverse, w, h, &opts)?;
+        let d_ink = self.nearest(&m, w, h, &opts)?;
+        let sdf: Vec<f32> = d_paper.iter().zip(&d_ink).map(|(&p, &i)| p - i).collect();
+        let iso = off_field_iso(&sdf, iso);
+        let program = self.kernels.program();
+        let dist = device.upload(&sdf, &[w, h])?;
         let max_segments = w.saturating_sub(1) * h.saturating_sub(1) * 2;
         let counter = device.upload(&[0u32], &[1])?;
         let segments = device.upload(
@@ -101,12 +76,74 @@ impl TrueTrace {
         ];
         program.call("marching_squares", &mut args, &opts)?;
         device.wait_all()?;
-
         let count = (counter.to_vec()?[0] as usize).min(max_segments);
         let data = segments.to_vec()?;
         let segs = Array2::from_shape_vec((count, 4), data[..count * 4].to_vec())?;
-        Ok((segs, (w, h)))
+        Ok((sort_segments(&segs.view()), (w, h)))
     }
+
+    /// Jump-flood distance (pixels) from every pixel to the nearest nonzero
+    /// pixel of `mask_int` (`(W, H)` column-major, as the kernels index), zero
+    /// on those pixels.
+    fn nearest(
+        &self,
+        mask_int: &[i32],
+        w: usize,
+        h: usize,
+        opts: &CallOptions,
+    ) -> Result<Vec<f32>> {
+        let device = self.kernels.device().clone();
+        let program = self.kernels.program();
+        let m_dev = device.upload(mask_int, &[w, h])?;
+        let seed_a = device.upload(&vec![-1.0f32; w * h * 4], &[w, h, 4])?;
+        let seed_b = device.upload(&vec![-1.0f32; w * h * 4], &[w, h, 4])?;
+        let dist = device.upload(&vec![INF32; w * h], &[w, h])?;
+        let mut args = [
+            CallArg::Buffer(m_dev.as_any()),
+            CallArg::Buffer(seed_a.as_any()),
+            CallArg::Buffer(dist.as_any()),
+        ];
+        program.call("init_seed_from_mask", &mut args, opts)?;
+        let max_dim = w.max(h);
+        let mut jump = 1usize;
+        while (jump << 1) < max_dim {
+            jump <<= 1;
+        }
+        let (mut cur_in, mut cur_out) = (&seed_a, &seed_b);
+        while jump >= 1 {
+            let mut args = [
+                CallArg::Scalar(jump as f64),
+                CallArg::Buffer(cur_in.as_any()),
+                CallArg::Buffer(dist.as_any()),
+                CallArg::Buffer(cur_out.as_any()),
+            ];
+            program.call("jfa_step", &mut args, opts)?;
+            std::mem::swap(&mut cur_in, &mut cur_out);
+            jump >>= 1;
+        }
+        device.wait_all()?;
+        Ok(dist.to_vec()?)
+    }
+}
+
+/// `sort_segments`: segments `[x0, y0, x1, y1]` in a canonical order (by x0,
+/// then y0, x1, y1), so chaining and simplification do not depend on the order
+/// a kernel's atomic counter or a scan emitted them in.
+pub fn sort_segments(segs: &ArrayView2<'_, f32>) -> Segments {
+    let mut rows: Vec<[f32; 4]> = segs
+        .rows()
+        .into_iter()
+        .map(|r| [r[0], r[1], r[2], r[3]])
+        .collect();
+    rows.sort_by(|a, b| {
+        a.iter()
+            .zip(b.iter())
+            .map(|(x, y)| x.partial_cmp(y).unwrap_or(std::cmp::Ordering::Equal))
+            .find(|o| *o != std::cmp::Ordering::Equal)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    let flat: Vec<f32> = rows.iter().flatten().copied().collect();
+    Array2::from_shape_vec((rows.len(), 4), flat).expect("4 columns")
 }
 
 // ----------------------------- CPU helpers ----------------------------------
@@ -372,14 +409,33 @@ pub fn write_svg_segments(
     Ok(())
 }
 
-/// A quantised point used as a dictionary key (Python `round(x / tol) * tol`).
+/// `off_field_iso(dist, iso)`: `iso` raised in float32 steps of 1e-3 px until
+/// no value of the field equals it. At an iso equal to a pixel-centre distance
+/// (1, sqrt 2, 2, ...) marching squares puts contour points on those pixels'
+/// centres, where the outlines on either side of a stroke meet; values at the
+/// iso already count as outside, so raising it changes no classification.
+pub fn off_field_iso(dist: &[f32], iso: f32) -> f32 {
+    let mut iso = iso;
+    while dist.iter().any(|&d| d == iso) {
+        iso += 1e-3f32;
+    }
+    iso
+}
+
+/// A point used as a dictionary key: exact (Python `(float(x), float(y))`) when
+/// `tol <= 0`, else quantised (`round(x / tol) * tol`).
 #[derive(Clone, Copy, Debug)]
 struct Key(f64, f64);
 
 impl Key {
     fn new(x: f32, y: f32, tol: f64) -> Key {
         let q = |v: f32| {
-            let r = (v as f64 / tol).round_ties_even() * tol;
+            let r = if tol <= 0.0 {
+                v as f64
+            } else {
+                (v as f64 / tol).round_ties_even() * tol
+            };
+            // Python's dict treats -0.0 and 0.0 as one key
             if r == 0.0 {
                 0.0
             } else {
@@ -415,7 +471,11 @@ impl Adjacency {
     }
 }
 
-/// `chain_segments_to_polylines(segs, tol=1e-3)`.
+/// `chain_segments_to_polylines(segs, tol=0.0)`: endpoints match exactly when
+/// `tol <= 0` (a crossing shared by two cells is the same float in both). A
+/// `tol` grid merges contours closer than `tol`: `trace_mask` chained with 0.25
+/// until 2026-10-21, which above iso 0.5 fused the two outlines of a 1 px
+/// stroke and filled long chords as black wedges.
 pub fn chain_segments_to_polylines(segs: &ArrayView2<'_, f32>, tol: f64) -> Vec<Polyline> {
     if segs.is_empty() {
         return Vec::new();
@@ -570,19 +630,22 @@ pub fn douglas_peucker(poly: &ArrayView2<'_, f32>, tol: f32) -> Polyline {
     out
 }
 
-/// `polygon_area(poly)` (shoelace over consecutive points, float32 dots).
+/// `polygon_area(poly)`: the signed shoelace area over consecutive points, in
+/// float64 with an exactly rounded sum (Python's `math.fsum`), as the Python
+/// package computes it since 2026-10-21 so that no host's BLAS order matters.
 pub fn polygon_area(poly: &ArrayView2<'_, f32>) -> f64 {
     let n = poly.nrows();
     if n < 2 {
         return 0.0;
     }
-    let mut a = 0f32;
-    let mut b = 0f32;
-    for i in 0..n - 1 {
-        a += poly[[i, 0]] * poly[[i + 1, 1]];
-        b += poly[[i, 1]] * poly[[i + 1, 0]];
-    }
-    0.5 * ((a - b) as f64)
+    let terms: Vec<f64> = (0..n - 1)
+        .map(|i| {
+            let (x0, y0) = (poly[[i, 0]] as f64, poly[[i, 1]] as f64);
+            let (x1, y1) = (poly[[i + 1, 0]] as f64, poly[[i + 1, 1]] as f64);
+            x0 * y1 - y0 * x1
+        })
+        .collect();
+    0.5 * npexact::fsum::fsum(&terms)
 }
 
 /// `close_and_filter_polylines(polys, close_tol_px=1.0, min_area_px2=0.0)`.
@@ -648,12 +711,9 @@ fn reversed(r: &Polyline) -> Polyline {
     v
 }
 
-/// `build_regions_with_holes(rings)`, ported as is.
-///
-/// The Python version has a quirk this port keeps: rings that lie inside
-/// another ring are never attached as holes; instead every top-level ring is
-/// appended, reversed, as a "hole" of the largest ring, which therefore appears
-/// twice (once plain, once with those holes).
+/// `build_regions_with_holes(rings)`: rings grouped into nested regions by
+/// centroid-in-polygon tests, nesting depth deciding outers (even) and holes
+/// (odd, reversed to CW); regions sorted by area.
 #[allow(clippy::needless_range_loop, clippy::map_entry)]
 pub fn build_regions_with_holes(rings: &[Polyline]) -> Vec<Region> {
     if rings.is_empty() {
@@ -674,23 +734,24 @@ pub fn build_regions_with_holes(rings: &[Polyline]) -> Vec<Region> {
             } else {
                 r.clone()
             };
+            // float64, exactly rounded, as the Python package's math.fsum centroid
             let n = rr.nrows() - 1;
-            let cx = rr
+            let xs: Vec<f64> = rr
                 .slice(ndarray::s![..n, 0])
                 .iter()
                 .map(|&v| v as f64)
-                .sum::<f64>()
-                / n as f64;
-            let cy = rr
+                .collect();
+            let ys: Vec<f64> = rr
                 .slice(ndarray::s![..n, 1])
                 .iter()
                 .map(|&v| v as f64)
-                .sum::<f64>()
-                / n as f64;
+                .collect();
+            let cx = npexact::fsum::fsum(&xs) / n as f64;
+            let cy = npexact::fsum::fsum(&ys) / n as f64;
             Rec {
                 ring: rr,
                 area,
-                centroid: (cx as f32 as f64, cy as f32 as f64),
+                centroid: (cx, cy),
             }
         })
         .collect();
@@ -713,40 +774,49 @@ pub fn build_regions_with_holes(rings: &[Polyline]) -> Vec<Region> {
         }
         parents[i] = best;
     }
-    // Python dict keyed by int, -1 meaning the last record; insertion order kept.
-    let mut order: Vec<isize> = Vec::new();
-    let mut regions: HashMap<isize, Region> = HashMap::new();
+    // Nesting depth decides: an unparented ring, or one inside a hole (even
+    // depth), is an outer; a ring directly inside an outer (odd depth) is that
+    // outer's hole, reversed to CW. Python's dict keeps insertion order.
+    let mut order: Vec<usize> = Vec::new();
+    let mut regions: HashMap<usize, Region> = HashMap::new();
     for (i, &p) in parents.iter().enumerate() {
-        if p == -1 {
-            order.push(i as isize);
-            regions.insert(
-                i as isize,
-                Region {
-                    outer: recs[i].ring.clone(),
-                    holes: Vec::new(),
-                },
-            );
-            let mut hole = reversed(&recs[i].ring);
-            let mut p = p;
-            while p != -1 && parents[p as usize] != -1 {
-                hole = reversed(&hole);
-                p = parents[p as usize];
+        let mut depth = 0;
+        let mut q = p;
+        while q != -1 {
+            depth += 1;
+            q = parents[q as usize];
+        }
+        if depth % 2 == 0 {
+            if !regions.contains_key(&i) {
+                order.push(i);
+                regions.insert(
+                    i,
+                    Region {
+                        outer: recs[i].ring.clone(),
+                        holes: Vec::new(),
+                    },
+                );
             }
-            let idx = if p == -1 { (n - 1) as isize } else { p };
+        } else {
+            let p = p as usize;
             if !regions.contains_key(&p) {
                 order.push(p);
                 regions.insert(
                     p,
                     Region {
-                        outer: recs[idx as usize].ring.clone(),
+                        outer: recs[p].ring.clone(),
                         holes: Vec::new(),
                     },
                 );
             }
-            regions.get_mut(&p).unwrap().holes.push(hole);
+            regions
+                .get_mut(&p)
+                .unwrap()
+                .holes
+                .push(reversed(&recs[i].ring));
         }
     }
-    let mut keyed: Vec<(isize, Region)> = order
+    let mut keyed: Vec<(usize, Region)> = order
         .into_iter()
         .map(|k| (k, regions.remove(&k).unwrap()))
         .collect();
@@ -868,7 +938,7 @@ pub fn write_svg_regions(
     Ok(())
 }
 
-/// `trace_bitmap(mask_u8, simplify_tol_px=0.75, min_area_px2=4.0, chain_tol_px=0.25)`:
+/// `trace_bitmap(mask_u8, simplify_tol_px=0.75, min_area_px2=4.0, chain_tol_px=0.0)`:
 /// closed rings from a binary mask, entirely on the CPU.
 pub fn trace_bitmap(
     mask: &ArrayView2<'_, u8>,
@@ -919,5 +989,234 @@ mod tests {
         let svg = svg_regions(&regions, 48, 40, 1.0, None, Curve::Cubic, 0.0);
         assert!(svg.starts_with("<svg xmlns"));
         assert!(svg.contains("<path d=\"M "));
+    }
+}
+
+// ----------------------------- Filling traced regions ------------------------
+
+/// `ring_to_polygon(ring, curve, tension, segments)`: a closed ring as a polygon,
+/// its vertices as they are (`curve = "none"`) or its Catmull-Rom cubics
+/// (`ring_to_cubic_beziers`) each flattened into `segments` steps by
+/// `paths::flatten_cubic` (`curve = "cubic"`).
+pub fn ring_to_polygon(
+    ring: &ArrayView2<'_, f32>,
+    curve: &str,
+    tension: f32,
+    segments: usize,
+) -> Result<Vec<[f64; 2]>> {
+    match curve {
+        "none" => Ok(ring
+            .rows()
+            .into_iter()
+            .take(ring.nrows().saturating_sub(1))
+            .map(|r| [r[0] as f64, r[1] as f64])
+            .collect()),
+        "cubic" => {
+            let mut poly = Vec::new();
+            for [p1, c1, c2, p2] in ring_to_cubic_beziers(ring, tension) {
+                let pts = super::paths::flatten_cubic(
+                    [p1[0] as f64, p1[1] as f64],
+                    [c1[0] as f64, c1[1] as f64],
+                    [c2[0] as f64, c2[1] as f64],
+                    [p2[0] as f64, p2[1] as f64],
+                    segments,
+                );
+                poly.extend_from_slice(&pts[..pts.len() - 1]);
+            }
+            Ok(poly)
+        }
+        other => Err(Error::Invalid(format!(
+            "curve must be 'none' or 'cubic', not {other:?}"
+        ))),
+    }
+}
+
+/// `fill_polygons(polys, shape, ink, paper)`: even-odd scanline fill of closed
+/// polygons (float64 vertices, implicitly closed) as an `(h, w)` float32 raster
+/// of `paper` with `ink` inside. Pixel (row, col) is sampled at (x = col,
+/// y = row); an edge counts on scanline y when `min(y0, y1) <= y < max(y0, y1)`,
+/// its crossing is `x0 + (y - y0) * (x1 - x0) / (y1 - y0)`, and each pair of
+/// sorted crossings `[xa, xb)` covers the pixels with `xa <= col < xb`. The
+/// same IEEE float64 operations as the Python package's, so the pixels match
+/// on every host.
+pub fn fill_polygons(
+    polys: &[Vec<[f64; 2]>],
+    shape: (usize, usize),
+    ink: f32,
+    paper: f32,
+) -> Array2<f32> {
+    let (h, w) = shape;
+    let mut out = Array2::<f32>::from_elem((h, w), paper);
+    let mut edges: Vec<[f64; 4]> = Vec::new();
+    for poly in polys {
+        let n = poly.len();
+        if n < 3 {
+            continue;
+        }
+        for i in 0..n {
+            let [x0, y0] = poly[i];
+            let [x1, y1] = poly[(i + 1) % n];
+            if y0 != y1 {
+                edges.push([x0, y0, x1, y1]);
+            }
+        }
+    }
+    if edges.is_empty() {
+        return out;
+    }
+    let ylo: Vec<f64> = edges.iter().map(|e| e[1].min(e[3])).collect();
+    let yhi: Vec<f64> = edges.iter().map(|e| e[1].max(e[3])).collect();
+    let y_first = (ylo.iter().copied().fold(f64::INFINITY, f64::min).ceil() as i64).max(0) as usize;
+    let y_last = (yhi.iter().copied().fold(f64::NEG_INFINITY, f64::max).ceil() as i64)
+        .min(h as i64)
+        .max(0) as usize;
+    let mut xc: Vec<f64> = Vec::new();
+    for y in y_first..y_last {
+        let yf = y as f64;
+        xc.clear();
+        for (k, e) in edges.iter().enumerate() {
+            if ylo[k] <= yf && yf < yhi[k] {
+                let [x0, y0, x1, y1] = *e;
+                xc.push(x0 + (yf - y0) * (x1 - x0) / (y1 - y0));
+            }
+        }
+        if xc.is_empty() {
+            continue;
+        }
+        xc.sort_by(|a, b| a.total_cmp(b));
+        let mut k = 0;
+        while k + 1 < xc.len() {
+            let a = (xc[k].ceil() as i64).max(0);
+            let b = (xc[k + 1].ceil() as i64).min(w as i64);
+            if a < b {
+                out.slice_mut(ndarray::s![y, a as usize..b as usize])
+                    .fill(ink);
+            }
+            k += 2;
+        }
+    }
+    out
+}
+
+/// `fill_regions(regions, shape, ...)`: nested regions rasterised as `ink` on
+/// a `paper` canvas of `(h, w)`: every ring, outer or hole, flattened by
+/// [`ring_to_polygon`] and filled together with the even-odd rule
+/// ([`fill_polygons`]), so the nesting takes care of the holes. (Until
+/// 2026-10-21 each region was triangulated with earcut and drawn through the
+/// graphics4 `mesh_triangles` kernel; the C++ and Rust earcut libraries
+/// triangulate differently and the kernel's coverage depended on that.)
+pub fn fill_regions(
+    regions: &[Region],
+    shape: (usize, usize),
+    curve: &str,
+    tension: f32,
+    segments: usize,
+    ink: f32,
+    paper: f32,
+) -> Result<Array2<f32>> {
+    let mut polys: Vec<Vec<[f64; 2]>> = Vec::new();
+    for region in regions {
+        for ring in std::iter::once(&region.outer).chain(region.holes.iter()) {
+            let poly = ring_to_polygon(&ring.view(), curve, tension, segments)?;
+            if poly.len() >= 3 {
+                polys.push(poly);
+            }
+        }
+    }
+    Ok(fill_polygons(&polys, shape, ink, paper))
+}
+
+/// Parameters of [`trace_mask`], the potrace replacement.
+#[derive(Debug, Clone)]
+pub struct TraceParams {
+    pub iso: f32,
+    pub simplify_tol_px: f32,
+    pub min_area_px2: f64,
+    pub chain_tol_px: f64,
+    pub curve: String,
+    pub tension: f32,
+    pub segments: usize,
+    /// `"gpu"` (jump flood) or `"cpu"` (exact EDT)
+    pub engine: String,
+}
+
+impl Default for TraceParams {
+    fn default() -> Self {
+        TraceParams {
+            iso: 0.0,
+            simplify_tol_px: 0.75,
+            min_area_px2: 4.0,
+            chain_tol_px: 0.0,
+            curve: "cubic".to_string(),
+            tension: 0.0,
+            segments: 8,
+            engine: "gpu".to_string(),
+        }
+    }
+}
+
+/// `trace_mask(mask, ...)`: a binary mask (nonzero = ink) traced into smooth
+/// filled shapes, as a raster of 1.0 (paper) and 0.0 (ink): the signed distance
+/// field (GPU jump flood or CPU EDT) traced at `iso`, chained, simplified,
+/// closed and filtered by area, nested, and filled by [`fill_regions`].
+pub fn trace_mask(
+    device: &Device,
+    mask: &ArrayView2<'_, u8>,
+    params: &TraceParams,
+) -> Result<Array2<f32>> {
+    let mask: Array2<u8> = mask.mapv(|v| (v != 0) as u8);
+    let (h, w) = mask.dim();
+    let segs = match params.engine.as_str() {
+        "gpu" => {
+            TrueTrace::load(device)?
+                .trace_segments(&mask.view(), params.iso)?
+                .0
+        }
+        "cpu" => {
+            let sdf = sdf_from_mask_cpu(&mask.view());
+            let iso = off_field_iso(sdf.as_slice().expect("contiguous field"), params.iso);
+            sort_segments(&marching_squares_cpu(&sdf.view(), iso).view())
+        }
+        other => {
+            return Err(Error::Invalid(format!(
+                "engine must be 'gpu' or 'cpu', not {other:?}"
+            )))
+        }
+    };
+    let polys = chain_segments_to_polylines(&segs.view(), params.chain_tol_px);
+    let simp: Vec<Polyline> = polys
+        .iter()
+        .filter(|p| p.nrows() >= 3)
+        .map(|p| douglas_peucker(&p.view(), params.simplify_tol_px))
+        .collect();
+    let rings = close_and_filter_polylines(&simp, 1.0, params.min_area_px2);
+    let regions = build_regions_with_holes(&rings);
+    fill_regions(
+        &regions,
+        (h, w),
+        &params.curve,
+        params.tension,
+        params.segments,
+        0.0,
+        1.0,
+    )
+}
+
+#[cfg(test)]
+mod region_tests {
+    use super::*;
+
+    #[test]
+    fn block_with_hole_and_speckle_nest_as_one_region_plus_one() {
+        let mut mask = Array2::<u8>::zeros((64, 80));
+        mask.slice_mut(ndarray::s![10..50, 12..68]).fill(1);
+        mask.slice_mut(ndarray::s![22..38, 30..50]).fill(0);
+        mask.slice_mut(ndarray::s![55..58, 5..8]).fill(1);
+        let rings = trace_bitmap(&mask.view(), 0.0, 0.0, 0.25);
+        assert_eq!(rings.len(), 3, "rings");
+        let regions = build_regions_with_holes(&rings);
+        let holes: Vec<usize> = regions.iter().map(|r| r.holes.len()).collect();
+        assert_eq!(regions.len(), 2, "regions: {holes:?}");
+        assert_eq!(holes.iter().sum::<usize>(), 1);
     }
 }

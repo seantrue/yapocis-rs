@@ -4,7 +4,7 @@
 
 mod common;
 
-use common::{allclose_f32, devices, lib_index, mismatch_fraction, open_npz, read_any, Npy};
+use common::{devices, lib_index, mismatch_fraction, open_npz, read_any, Npy};
 use ndarray::{Array2, Array3, ArrayD, Axis, IxDyn};
 use ndarray_npy::NpzReader;
 use serde_json::Value;
@@ -224,7 +224,12 @@ fn check_canvas(
     }
     let g = got.as_slice().unwrap();
     let w = want.as_slice().unwrap();
-    if let Err(e) = allclose_f32(g, w, rtol, atol) {
+    if let Err(e) = common::allclose_f32(
+        g,
+        w,
+        common::tolerances(rtol, atol).0,
+        common::tolerances(rtol, atol).1,
+    ) {
         let frac = mismatch_fraction(g, w, (atol * 10.0) as f32);
         assert!(
             frac <= tolerance_fraction,
@@ -642,8 +647,13 @@ fn typeset_parity() {
             assert_eq!(got.bbox.to_vec(), bbox, "{name}: bbox");
             assert_eq!(got.block.shape(), want.shape(), "{name}: block shape");
             let g: Vec<f32> = got.block.iter().cloned().collect();
-            allclose_f32(&g, want.as_slice().unwrap(), 0.0, 1e-6)
-                .unwrap_or_else(|e| panic!("{name}: {e}"));
+            common::allclose_f32(
+                &g,
+                want.as_slice().unwrap(),
+                common::tolerances(0.0, 1e-6).0,
+                common::tolerances(0.0, 1e-6).1,
+            )
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
         }
         for o in rec["offsets"].as_array().unwrap() {
             let (dx, dy) = typeset::compute_offset(

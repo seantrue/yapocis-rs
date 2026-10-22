@@ -118,3 +118,67 @@ mod tests {
         }
     }
 }
+
+/// `yapocis.utils.basic.normalize`: `a - a.min()` then `/ a.max()`, over every
+/// element whatever the shape, in the array's own precision. A constant array
+/// divides by zero as numpy does (NaN or infinities, no error).
+pub fn normalize(a: &ArrayViewD<'_, f32>) -> ArrayD<f32> {
+    // numpy's min/max propagate NaN; fold the same way (a NaN wins)
+    let min = a.iter().copied().fold(f32::INFINITY, |m, v| {
+        if v.is_nan() || m.is_nan() {
+            f32::NAN
+        } else {
+            m.min(v)
+        }
+    });
+    let shifted = a.mapv(|v| v - min);
+    let max = shifted.iter().copied().fold(f32::NEG_INFINITY, |m, v| {
+        if v.is_nan() || m.is_nan() {
+            f32::NAN
+        } else {
+            m.max(v)
+        }
+    });
+    shifted.mapv(|v| v / max)
+}
+
+/// `yapocis.utils.basic.align_image`: crop a 2-D or 3-D image so its first two
+/// dimensions are multiples of `alignment` (4 by default), keeping the top-left
+/// part, as a fresh contiguous copy.
+pub fn align_image(image: &ArrayViewD<'_, f32>, alignment: usize) -> ArrayD<f32> {
+    assert!(
+        matches!(image.ndim(), 2 | 3),
+        "align_image: 2-D or 3-D image expected"
+    );
+    let shape = image.shape();
+    let (rows, cols) = (shape[0], shape[1]);
+    let even_rows = rows - rows % alignment;
+    let even_cols = cols - cols % alignment;
+    let cropped = image.slice_axis(ndarray::Axis(0), ndarray::Slice::from(0..even_rows));
+    let cropped = cropped.slice_axis(ndarray::Axis(1), ndarray::Slice::from(0..even_cols));
+    cropped.as_standard_layout().to_owned()
+}
+
+#[cfg(test)]
+mod alignment_tests {
+    use super::*;
+    use ndarray::Array3;
+
+    #[test]
+    fn align_crops_to_multiples_of_four() {
+        let a = Array3::<f32>::from_shape_fn((11, 9, 3), |(r, c, k)| (r * 100 + c * 10 + k) as f32)
+            .into_dyn();
+        let b = align_image(&a.view(), 4);
+        assert_eq!(b.shape(), &[8, 8, 3]);
+        assert_eq!(b[[7, 7, 2]], 772.0);
+        let c = align_image(&b.view(), 4);
+        assert_eq!(c, b);
+    }
+
+    #[test]
+    fn normalize_spans_zero_to_one() {
+        let a = ndarray::arr1(&[2.0f32, 4.0, 6.0]).into_dyn();
+        let n = normalize(&a.view());
+        assert_eq!(n.as_slice().unwrap(), &[0.0, 0.5, 1.0]);
+    }
+}

@@ -106,7 +106,12 @@ fn cnn_kernels_match_python() {
                 continue;
             }
             for (i, (g, e)) in got.iter().zip(&expected).enumerate() {
-                if let Err(msg) = allclose_f32(g, e.as_slice().unwrap(), rtol, atol) {
+                if let Err(msg) = common::allclose_f32(
+                    g,
+                    e.as_slice().unwrap(),
+                    common::tolerances(rtol, atol).0,
+                    common::tolerances(rtol, atol).1,
+                ) {
                     failures.push(format!("{kernel}: output {i}: {msg}"));
                 }
             }

@@ -32,7 +32,8 @@ fn check(label: &str, got: &ArrayD<f32>, want: &ArrayD<f32>) {
     assert_eq!(got.shape(), want.shape(), "{label}: shape");
     let g = got.as_standard_layout();
     let w = want.as_standard_layout();
-    if let Err(e) = allclose_f32(g.as_slice().unwrap(), w.as_slice().unwrap(), RTOL, ATOL) {
+    let (rtol, atol) = common::tolerances(RTOL, ATOL);
+    if let Err(e) = allclose_f32(g.as_slice().unwrap(), w.as_slice().unwrap(), rtol, atol) {
         panic!("{label}: {e}");
     }
 }
@@ -132,7 +133,7 @@ fn truetrace_cpu_pipeline_matches_python() {
     );
 
     // chaining and simplification, in Python's order
-    let polys = truetrace::chain_segments_to_polylines(&ms_mask.view(), 0.25);
+    let polys = truetrace::chain_segments_to_polylines(&ms_mask.view(), 0.0);
     assert_eq!(
         polys.len() as u64,
         case["n_polys"].as_u64().unwrap(),
@@ -160,7 +161,7 @@ fn truetrace_cpu_pipeline_matches_python() {
     }
 
     // rings, areas, regions
-    let rings = truetrace::trace_bitmap(&mask.view(), 0.75, 4.0, 0.25);
+    let rings = truetrace::trace_bitmap(&mask.view(), 0.75, 4.0, 0.0);
     assert_eq!(rings.len() as u64, case["n_rings"].as_u64().unwrap());
     let all = f32s(&mut z, "rings");
     let offsets = read_array::<i64>(&mut z, "ring_offsets");
@@ -579,5 +580,82 @@ fn fft_analysis_matches_python() {
             ),
             "{backend:?} snr"
         );
+    }
+}
+
+/// The potrace replacement: `fill_regions` and `trace_mask` rasters equal
+/// Python's bit for bit (the `fill` case of the truetrace generator).
+#[test]
+fn truetrace_fill_matches_python() {
+    use ndarray::Array2;
+    for device in common::devices() {
+        let backend = device.backend();
+        for case in cases(backend, "truetrace") {
+            if case["name"] != "fill" {
+                continue;
+            }
+            let mut z = npz(backend, &case);
+            let mask = read_array::<u8>(&mut z, "mask");
+            let mask: Array2<u8> = mask.into_dimensionality().unwrap();
+            let rings = truetrace::trace_bitmap(&mask.view(), 0.0, 0.0, 0.0);
+            let regions = truetrace::build_regions_with_holes(&rings);
+            assert_eq!(
+                regions.len() as u64,
+                case["regions"].as_u64().unwrap(),
+                "{backend:?}: regions"
+            );
+            let exact = |label: &str, got: &Array2<f32>, want: &ArrayD<f32>| {
+                let want: ndarray::ArrayView2<f32> = want.view().into_dimensionality().unwrap();
+                assert_eq!(got.dim(), want.dim(), "{backend:?} {label}: shape");
+                let diff = got
+                    .iter()
+                    .zip(want.iter())
+                    .filter(|(a, b)| a.to_bits() != b.to_bits())
+                    .count();
+                assert_eq!(diff, 0, "{backend:?} {label}: {diff} pixels differ");
+            };
+            let none =
+                truetrace::fill_regions(&regions, mask.dim(), "none", 0.0, 8, 0.0, 1.0).unwrap();
+            exact("filled_none", &none, &f32s(&mut z, "filled_none"));
+            let cubic =
+                truetrace::fill_regions(&regions, mask.dim(), "cubic", 0.0, 8, 0.0, 1.0).unwrap();
+            exact("filled_cubic", &cubic, &f32s(&mut z, "filled_cubic"));
+            for engine in ["gpu", "cpu"] {
+                for iso in [0.0f32, -1.0] {
+                    let params = truetrace::TraceParams {
+                        iso,
+                        engine: engine.to_string(),
+                        ..Default::default()
+                    };
+                    let got = truetrace::trace_mask(&device, &mask.view(), &params).unwrap();
+                    let key = format!("trace_{engine}_iso{iso:.1}");
+                    exact(&key, &got, &f32s(&mut z, &key));
+                }
+            }
+            // 1 px strokes traced inside the ink (the chaining fix of 2026-10-21)
+            let thin = read_array::<u8>(&mut z, "thin_mask");
+            let thin: Array2<u8> = thin.into_dimensionality().unwrap();
+            for engine in ["gpu", "cpu"] {
+                for iso in [0.75f32, 1.0] {
+                    let params = truetrace::TraceParams {
+                        iso,
+                        curve: "none".to_string(),
+                        engine: engine.to_string(),
+                        ..Default::default()
+                    };
+                    let got = truetrace::trace_mask(&device, &thin.view(), &params).unwrap();
+                    let key = format!(
+                        "thin_{engine}_iso{}",
+                        if iso == 1.0 {
+                            "1.0".to_string()
+                        } else {
+                            iso.to_string()
+                        }
+                    );
+                    exact(&key, &got, &f32s(&mut z, &key));
+                }
+            }
+            println!("{backend:?}: fill case matches");
+        }
     }
 }

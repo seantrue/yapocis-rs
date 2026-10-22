@@ -2,8 +2,9 @@
 //! interface structs.
 
 use crate::rt::{self, CallOutput, Device, Element, Output, OutputValue, Program};
-use crate::{Error, Result, MANIFEST};
+use crate::{Error, Result};
 use ndarray::{ArrayD, ArrayViewD, ArrayViewMutD, CowArray, IxDyn};
+use yapocis_bundle::Manifest;
 
 /// Implemented by every generated interface struct.
 pub trait Interface: Sized {
@@ -11,13 +12,15 @@ pub trait Interface: Sized {
     fn from_program(program: Program) -> Self;
     fn program(&self) -> &Program;
     fn source(backend: &str) -> Option<&'static str>;
+    /// The manifest of the bundle this interface was generated from.
+    fn manifest() -> &'static Manifest;
 }
 
 /// Compile a generated interface for `device`.
 pub fn load<I: Interface>(device: &Device) -> Result<I> {
-    let entry = MANIFEST
+    let entry = I::manifest()
         .interface(I::ID)
-        .unwrap_or_else(|| panic!("interface {} missing from the bundled manifest", I::ID));
+        .unwrap_or_else(|| panic!("interface {} missing from its bundle's manifest", I::ID));
     let backend = device.backend();
     let source = I::source(backend.name()).ok_or(Error::BackendUnavailable(backend))?;
     Ok(I::from_program(device.load(entry, source)?))

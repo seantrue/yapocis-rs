@@ -31,7 +31,8 @@ let smoothed = median.median3x3(&image.view(), 5)?;
 |---|---|
 | `yapocis` | Public API: generated interface structs, library ports (`lib::*`), the vendored bundle |
 | `yapocis-rt` | Runtime: devices, buffers, program compilation and cache, launches; features `ocl`, `metal`, `cuda` |
-| `yapocis-bundle` | Manifest schema, argument derivation and dispatch evaluation; no GPU dependencies |
+| `yapocis-bundle` | Manifest schema, argument derivation and dispatch evaluation, and `codegen`, the typed-API generator any crate's `build.rs` can run on a bundle; no GPU dependencies |
+| `npexact` | Bit-exact ports of numpy host numerics: `SeedSequence`/`PCG64`/`Generator` draws, pairwise `sum`/`mean`/`var`/`std`, numpy's own float32 `sin`/`cos` and `tanh`; proven by per-host fixtures (`yapocis-tools bundle --host-fixtures`) compared on bit patterns |
 
 Enable backends with Cargo features: `yapocis = { version = "0.1", features = ["metal"] }`.
 `metal` builds only on macOS; `cuda` loads `libcuda` and `libnvrtc` at runtime and is
@@ -71,6 +72,23 @@ skips with a message when there are none.
 CI (Linux, no GPU) builds the OpenCL and CUDA backends, runs clippy, rustfmt and
 the device-free tests, and checks the vendored bundle for drift. Metal and the
 GPU tests run locally.
+
+Setting `YAPOCIS_PARITY_EXACT=1` runs the library parity tests with zero
+tolerance, to see which ports match Python bit for bit on this device (on the
+M4 Max, every one that Virtual Impressionist uses; FFT coherence differs).
+
+`npexact`'s tests compare against `crates/npexact/fixtures/host/<host slug>/`,
+recorded by `yapocis-tools bundle --host-fixtures crates/npexact/fixtures/host`
+on each host (numpy's SIMD dispatch, libm and FMA contraction differ by CPU, and
+the index records which applies), and skip with a message on a host without them.
+
+## A second bundle
+
+Another project's kernels (found by the Python runtime through
+`YAPOCIS_PROJECT`) can be vendored by another crate: export them with
+`yapocis-tools bundle --project-only`, and have that crate's `build.rs` call
+`yapocis_bundle::codegen::generate` on the bundle, defining its own `MANIFEST`
+static. impressionist-rs does this for yapocis_external.
 
 ## Regenerating the bundle
 

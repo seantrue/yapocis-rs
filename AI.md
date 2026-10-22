@@ -17,6 +17,39 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-10-21 — truetrace: exact chaining and `off_field_iso` (Claude Opus 5.5)
+
+**What the maintainer asked for.** "Defaut to .75, fix in yapicis-rs": mirror Yapocis3's fix for truetrace above iso 0.5, where 0.25 px endpoint snapping fused the two outlines of 1 px strokes into black wedges.
+
+**What the AI did.**
+
+- `lib/truetrace.rs`: endpoints chained by exact keys, `TraceParams::default()` with `chain_tol_px: 0.0`, and `off_field_iso`, all as in Yapocis3 (on its `dev` branch).
+- The truetrace parity fixtures (OpenCL and Metal on the M4 Max) were regenerated from Yapocis3 with 1 px stroke cases at iso 0.75 and 1.0. `tests/processing.rs` and `tests/truetrace_stages.rs` follow (iso 0.75, tolerance 0).
+
+**Verification.** On commit (2026-10-22) the suite on OpenCL (`--features yapocis/ocl`) passed: 92 tests, none failed. `convolve` and `fft_analysis` fail only under `YAPOCIS_PARITY_EXACT=1` (last-bit differences, also without this change) and pass at the normal tolerance.
+
+### 2026-10-21 — npexact, bundle codegen as a library, truetrace scanline fill, image helpers (Claude Fable 5.1)
+
+**What the maintainer asked for.** The Rust port of Virtual Impressionist (impressionist-rs), with the decision that numpy-exact numerics live here, proven by fixtures numpy itself records.
+
+**What the AI did.** This entry is reconstructed from that session's report (`../impressionist/claude-debug/rustport_status_20261021.md`, `rustport_spikes_20261021.md`); it was written when the work was first committed on 2026-10-22.
+
+- **`crates/npexact`** (new, ~4,800 lines with tests) ports numpy 2.5.3's host numerics bit for bit:
+  - `SeedSequence`, `PCG64` and the `Generator` draws, the ziggurat included;
+  - pairwise `sum`/`mean`/`var`/`std` and `reduceat`;
+  - quantiles and medians;
+  - `histogram`, `linspace`, `interp` and `cumsum`;
+  - numpy's own float32 SIMD `sin`/`cos` and the `tanh`s;
+  - `math.fsum`.
+  
+  The host's fused-multiply-add policy is a parameter. It is proven by fixtures from Yapocis3's `bundle --host-fixtures`.
+- **`yapocis-bundle::codegen`** (new, ~460 lines): the typed-interface generator moved out of `yapocis/build.rs` (409 lines fewer there), so impressionist-rs generates its own bundle's API the same way. `Interface::manifest()` lets each bundle carry its own manifest.
+- **`lib/truetrace.rs`:** float64 `fsum` geometry and the even-odd scanline fill (`fill_polygons`), matching Yapocis3. The earcut and graphics-kernel path was dropped because the C++ and Rust earcut libraries triangulate differently. New fixtures: `truetrace.fill.npz`.
+- **`lib/image.rs`:** `normalize` and `align_image`, as `yapocis.utils.basic` has them.
+- **Tests:** `cnn`, `convolve`, `graphics`, `processing` and `tests/common` adjusted for per-device fixtures and the new cases.
+
+**Defects.** That session's report does not itemise its defects.
+
 ### 2026-10-20 — Machine names replaced with generic descriptions (Claude Opus 5.5)
 
 The maintainer asked for the names of their two machines to be replaced in the repository: one becomes "the Linux host" and the other "the M4 MacBook". The change covers 16 lines in `AI.md`, `CLAUDE.md`, `bundle/SOURCE`, the CI workflow and two comments in `yapocis-rt`. The README never named them. Two matches were left alone, because they are an ImageNet class label in the VGG16 and ResNet50 `classes.txt` files, not a machine. Only text and comments changed.
