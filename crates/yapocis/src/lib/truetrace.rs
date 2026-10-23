@@ -416,7 +416,7 @@ pub fn write_svg_segments(
 /// iso already count as outside, so raising it changes no classification.
 pub fn off_field_iso(dist: &[f32], iso: f32) -> f32 {
     let mut iso = iso;
-    while dist.iter().any(|&d| d == iso) {
+    while dist.contains(&iso) {
         iso += 1e-3f32;
     }
     iso

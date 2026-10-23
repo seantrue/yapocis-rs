@@ -78,13 +78,14 @@ impl Imageops {
         }
         let mut imhist = self.histogram(im, nbr_bins, 0.0, 1.0)?;
         imhist[0] = 0;
-        let cdf_i32 = cumsum_i32(imhist.as_slice().unwrap());
-        let last = *cdf_i32.last().unwrap() as f64;
-        let scale = (nbr_bins - 1) as i32;
-        // numpy: int * int32 array stays int32 (wrapping), then true division
-        let cdf: Vec<f64> = cdf_i32
+        // numpy's cumsum of an int32 array is the platform int (int64), so
+        // (nbr_bins - 1) * cdf can't wrap; then true division in float64
+        let cdf_i64 = cumsum_i64(imhist.as_slice().unwrap());
+        let last = *cdf_i64.last().unwrap() as f64;
+        let scale = (nbr_bins - 1) as i64;
+        let cdf: Vec<f64> = cdf_i64
             .iter()
-            .map(|&c| (scale.wrapping_mul(c) as f64 / last) / nbr_bins as f64)
+            .map(|&c| ((scale * c) as f64 / last) / nbr_bins as f64)
             .collect();
         let bins = linspace(0.0, 1.0, nbr_bins);
         let flat = im.as_standard_layout();
@@ -108,7 +109,7 @@ impl Imageops {
         }
         let mut src_hist = self.histogram(im, nbr_bins, 0.0, 1.0)?;
         src_hist[0] = 0;
-        let src_cdf_i = cumsum_i32(src_hist.as_slice().unwrap());
+        let src_cdf_i = cumsum_i64(src_hist.as_slice().unwrap());
         let src_last = *src_cdf_i.last().unwrap() as f64;
         let src_cdf: Vec<f64> = src_cdf_i.iter().map(|&c| c as f64 / src_last).collect();
 
@@ -143,13 +144,14 @@ impl Imageops {
     }
 }
 
-/// `np.cumsum` of an int32 array: int32 with wrap-around.
-pub fn cumsum_i32(values: &[i32]) -> Vec<i32> {
-    let mut acc = 0i32;
+/// `np.cumsum` of an int32 array: the platform int, int64 (numpy promotes integer types
+/// narrower than it).
+pub fn cumsum_i64(values: &[i32]) -> Vec<i64> {
+    let mut acc = 0i64;
     values
         .iter()
         .map(|&v| {
-            acc = acc.wrapping_add(v);
+            acc += v as i64;
             acc
         })
         .collect()
@@ -205,6 +207,9 @@ mod tests {
         assert_eq!(interp(2.0, &xp, &fp), 4.0);
         assert_eq!(interp(0.75, &xp, &fp), 2.0);
         assert_eq!(linspace(0.0, 1.0, 3), vec![0.0, 0.5, 1.0]);
-        assert_eq!(cumsum_i32(&[i32::MAX, 1]), vec![i32::MAX, i32::MIN]);
+        assert_eq!(
+            cumsum_i64(&[i32::MAX, 1]),
+            vec![i32::MAX as i64, i32::MAX as i64 + 1]
+        );
     }
 }

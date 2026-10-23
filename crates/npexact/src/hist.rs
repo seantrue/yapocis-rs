@@ -95,6 +95,13 @@ pub fn histogram_f32(a: &[f32], bins: usize) -> (Vec<i64>, Vec<f32>) {
         first -= 0.5;
         last += 0.5;
     }
+    histogram_range_f32(a, bins, first, last)
+}
+
+/// `np.histogram(a, bins, range=(first, last))[0]` as counts, and the float32 bin edges, for
+/// a float32 array: values outside the range are left out, and the last bin includes `last`.
+pub fn histogram_range_f32(a: &[f32], bins: usize, first: f32, last: f32) -> (Vec<i64>, Vec<f32>) {
+    assert!(bins >= 1);
     let edges = linspace_f32(first, last, bins + 1);
     let mut counts = vec![0i64; bins];
     let norm_denom = last - first;

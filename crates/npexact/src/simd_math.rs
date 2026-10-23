@@ -100,6 +100,36 @@ fn sincos_f32(x_in: f32, op: TrigOp) -> f32 {
     v
 }
 
+/// `np.abs` of a complex64 (`loops_unary_complex.dispatch.c.src`): numpy's SIMD lanes
+/// compute `larger * sqrt(fma(r, r, 1))` with `r = smaller / larger`, not `hypotf`, so the
+/// two differ by an ulp on about one value in three hundred. An infinite part gives
+/// infinity even beside a NaN; otherwise a NaN part gives NaN.
+pub fn cabs_f32(re: f32, im: f32) -> f32 {
+    let (mut re, mut im) = (re.abs(), im.abs());
+    if re == f32::INFINITY {
+        im = f32::INFINITY;
+    }
+    if im == f32::INFINITY {
+        re = f32::INFINITY;
+    }
+    if re.is_nan() {
+        im = f32::NAN;
+    }
+    if im.is_nan() {
+        re = f32::NAN;
+    }
+    if re.is_nan() {
+        return f32::NAN;
+    }
+    let (larger, smaller) = if re >= im { (re, im) } else { (im, re) };
+    let ratio = if larger == 0.0 || smaller == f32::INFINITY {
+        0.0
+    } else {
+        smaller / larger
+    };
+    ratio.mul_add(ratio, 1.0).sqrt() * larger
+}
+
 /// `np.sin` on a float32 array, one element.
 pub fn sin_f32(x: f32) -> f32 {
     sincos_f32(x, TrigOp::Sin)
@@ -198,5 +228,19 @@ mod tests {
         // beyond the reduction range numpy and this port both call libm
         assert_eq!(sin_f32(200_000.0), 200_000.0f32.sin());
         assert!(sin_f32(f32::NAN).is_nan());
+    }
+}
+
+#[cfg(test)]
+mod cabs_tests {
+    use super::cabs_f32;
+
+    #[test]
+    fn special_values() {
+        assert_eq!(cabs_f32(3.0, -4.0), 5.0);
+        assert_eq!(cabs_f32(0.0, 0.0), 0.0);
+        assert_eq!(cabs_f32(f32::NEG_INFINITY, f32::NAN), f32::INFINITY);
+        assert!(cabs_f32(f32::NAN, 1.0).is_nan());
+        assert_eq!(cabs_f32(1.0, f32::INFINITY), f32::INFINITY);
     }
 }

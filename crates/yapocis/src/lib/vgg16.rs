@@ -139,6 +139,20 @@ impl Vgg16 {
         self.layers.download_1d(&fc8)
     }
 
+    /// `predict` of an (H, W, 3) float image in [0, 1], preprocessed as Python's
+    /// `preprocess_image` does a float array.
+    pub fn predict_array(
+        &self,
+        image: &ArrayView3<'_, f32>,
+        k: usize,
+    ) -> Result<Vec<(usize, f32)>> {
+        let probs = self.forward(
+            &super::cnn::preprocess_vgg16_array(image).view(),
+            Vgg16Layer::Probabilities,
+        )?;
+        Ok(top_k(probs.as_slice().unwrap_or(&[]), k))
+    }
+
     /// `VGG16.predict`: top-k `(class index, probability)` for an image.
     pub fn predict(&self, image: &RgbImage, k: usize) -> Result<Vec<(usize, f32)>> {
         let probs = self.forward(&self.preprocess(image).view(), Vgg16Layer::Probabilities)?;

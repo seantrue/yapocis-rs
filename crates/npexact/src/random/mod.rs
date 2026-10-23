@@ -577,14 +577,14 @@ impl Generator {
                 }
                 if hash_set[loc] == u64::MAX {
                     hash_set[loc] = val;
-                    idx[j - pop_size + size] = val as i64;
+                    idx[j + size - pop_size] = val as i64;
                 } else {
                     let mut loc = (j as u64 & mask) as usize;
                     while hash_set[loc] != u64::MAX {
                         loc = ((loc as u64 + 1) & mask) as usize;
                     }
                     hash_set[loc] = j as u64;
-                    idx[j - pop_size + size] = j as i64;
+                    idx[j + size - pop_size] = j as i64;
                 }
             }
             self.shuffle_int(1, &mut idx);

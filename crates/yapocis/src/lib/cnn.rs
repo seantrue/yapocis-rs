@@ -10,7 +10,6 @@
 use crate::interfaces::cnn::Cnn;
 use crate::rt::{CallArg, CallOptions};
 use crate::{Buffer, Device, Error, Result};
-use image::imageops::FilterType;
 use image::{DynamicImage, RgbImage};
 use ndarray::{Array1, Array3, ArrayD, ArrayView3, IxDyn};
 use ndarray_npy::NpzReader;
@@ -156,26 +155,44 @@ fn hwc_to_normalised_chw(img: &RgbImage) -> Array3<f32> {
     out
 }
 
-/// `VGG16.preprocess_image`: resize to 224×224 (PIL BILINEAR), scale to [0, 1],
-/// ImageNet-normalise, (3, 224, 224).
-///
-/// Resampling note: PIL's BILINEAR and the `image` crate's `Triangle` filter
-/// are the same triangle kernel with support scaled on downsampling, but PIL
-/// rounds its coefficients to 8-bit fixed point, so a few pixels can differ by
-/// one 8-bit step. Networks are insensitive to this; exact parity holds from a
-/// preprocessed tensor onward.
+/// `VGG16.preprocess_image`: resize to 224×224 (PIL BILINEAR, exactly: [`super::pil`]),
+/// scale to [0, 1], ImageNet-normalise, (3, 224, 224).
 pub fn preprocess_vgg16(img: &RgbImage) -> Array3<f32> {
     let resized = if img.width() == 224 && img.height() == 224 {
         img.clone()
     } else {
-        image::imageops::resize(img, 224, 224, FilterType::Triangle)
+        super::pil::resize_bilinear(img, 224, 224)
     };
     hwc_to_normalised_chw(&resized)
 }
 
-/// `ResNet50.preprocess_image`: shortest edge to 256 (PIL BILINEAR), centre
-/// crop 224×224, scale to [0, 1], ImageNet-normalise, (3, 224, 224). See the
-/// resampling note on [`preprocess_vgg16`].
+/// `Image.fromarray((image * 255).astype(np.uint8))` of an (H, W, 3) float image in [0, 1].
+pub fn quantize(image: &ArrayView3<'_, f32>) -> RgbImage {
+    let (h, w, _) = image.dim();
+    RgbImage::from_fn(w as u32, h as u32, |x, y| {
+        let v = |c: usize| (image[[y as usize, x as usize, c]] * 255.0) as u8;
+        image::Rgb([v(0), v(1), v(2)])
+    })
+}
+
+/// `VGG16.preprocess_image` of an (H, W, 3) float image in [0, 1]: one already 224×224 is
+/// normalised as it is; any other is quantised to 8 bits and resized.
+pub fn preprocess_vgg16_array(image: &ArrayView3<'_, f32>) -> Array3<f32> {
+    let (h, w, _) = image.dim();
+    if (h, w) != (224, 224) {
+        return preprocess_vgg16(&quantize(image));
+    }
+    let mut out = Array3::<f32>::zeros((3, h, w));
+    for ((y, x, c), &v) in image.indexed_iter() {
+        if c < 3 {
+            out[[c, y, x]] = (v - IMAGENET_MEAN[c]) / IMAGENET_STD[c];
+        }
+    }
+    out
+}
+
+/// `ResNet50.preprocess_image`: shortest edge to 256 (PIL BILINEAR, exactly), centre
+/// crop 224×224, scale to [0, 1], ImageNet-normalise, (3, 224, 224).
 pub fn preprocess_resnet50(img: &RgbImage) -> Array3<f32> {
     let (w, h) = (img.width(), img.height());
     // Python: int(256 * w / h) truncates
@@ -184,7 +201,7 @@ pub fn preprocess_resnet50(img: &RgbImage) -> Array3<f32> {
     } else {
         (256, (256.0 * h as f64 / w as f64) as u32)
     };
-    let resized = image::imageops::resize(img, new_w, new_h, FilterType::Triangle);
+    let resized = super::pil::resize_bilinear(img, new_w, new_h);
     let left = (new_w - 224) / 2;
     let top = (new_h - 224) / 2;
     let cropped = DynamicImage::ImageRgb8(resized)

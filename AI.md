@@ -17,6 +17,32 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-10-23 — Pillow's resize, exact CNN preprocessing, numpy's complex abs, and the FFT race (Claude Opus 5.5)
+
+**What the maintainer asked for.** "Port all the nodes": ImpCraft's local engine on impressionist-rs, with every node bit-exact against its Python engine.
+
+**What the AI did.**
+- **`lib/pil.rs` (355 lines, new).** Pillow's resize, made exact for Pillow's two paths:
+  - 8-bit images use its fixed-point BILINEAR and LANCZOS resampler (`resize`).
+  - Float images use `resize_f32`. Pillow fuses the multiply-add in the vertical pass but not the horizontal one, and the port does the same.
+  - It also has `to_luma` and `Filter`.
+- **`lib/cnn.rs`, `resnet50.rs`, `vgg16.rs`.** ImageNet preprocessing exact with yapocis3's (Pillow resize and the same float order), plus `predict_array` for ImpCraft's Classify node.
+- **npexact.** `cabs_f32` matches numpy's SIMD complex `abs`, which uses a fused multiply-add. Also a `hist.rs` helper and a fix to `random` seeding.
+- **The FFT bundle kernels** carry yapocis3's fix (80884c3 on dev): one work-item per radix-2 butterfly (two raced on one pair, so batch FFTs varied run to run), and the radix-2 path only for power-of-two lengths. `bundle/SOURCE` records the patch.
+- **`truetrace.rs`.** `off_field_iso` uses `contains`, for this toolchain's clippy. The behaviour is the same.
+
+**Testing.**
+- `cargo test --release --workspace --features yapocis/ocl,yapocis/metal` passes on the M4, and clippy is clean.
+- ImpCraft's exact cases cover resize, Classify preprocessing, FFT magnitude and inverse FFT against its Python engine.
+- The CUDA FFT kernel has not yet been run on CUDA.
+
+**Defect record.**
+- The first float resize fused both passes, and the ImpCraft cases caught the mismatch.
+- The FFT magnitude first used a plain `hypot`; the exact digests showed numpy's FMA.
+- The FFT race itself predates this work. A bit-exact digest that changed between runs exposed it.
+
+**LOC (measured):** `pil.rs` +355, `cnn.rs` +31/−14, `imageops.rs` +17/−12, `resnet50.rs` and `vgg16.rs` +14 each, npexact +53/−2, bundle kernels +14/−14.
+
 ### 2026-10-22 — truetrace on CUDA no longer transposed: vendored kernel and RTX 3080 fixtures (Claude Opus 5.5)
 
 Yapocis3's CUDA truetrace kernel addressed `x` as the fast axis while its wrapper passes `(W, H)` arrays with `x` slow, so on CUDA every traced shape came out transposed (recorded in Yapocis3's AI.md, fixed on its `dev` branch in `a42bfab`). This repository vendors that kernel, so the Rust port had the same bug. It showed when the Rust worker's CUDA dry run on yellowfin was compared with OpenCL.

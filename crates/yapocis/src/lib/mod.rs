@@ -21,6 +21,7 @@ pub mod mandelbrot;
 pub mod median;
 pub mod operators;
 pub mod paths;
+pub mod pil;
 pub mod resnet50;
 pub mod simplex;
 pub mod truetrace;
