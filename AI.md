@@ -17,6 +17,21 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-10-25 — `text` builds on Windows: patched freetype-sys, C `long` widths in typesetting (Claude Opus 5.5)
+
+**What the maintainer asked for.** A Windows 11 development VM for porting this stack, then, of the fixes offered for the first Windows build failures: "1,2,4", meaning fork freetype-sys with the fix, consume the fork through `[patch]`, and fix the type errors here. They ruled out proposing the change upstream: "many repos don't want AI proposing changes."
+
+**What the AI did.**
+
+- **`Cargo.toml` (~6 LOC):** `[patch.crates-io] freetype-sys` points at the maintainer's fork (`seantrue/freetype-sys`, rev `900ebc5`). The published 0.23.0 compiles its bundled libpng with `-I libz-sys/src/zlib`, a path that exists only in a git checkout, so MSVC stops on `zlib.h`; the fork takes zlib's headers from libz-sys (`DEP_Z_INCLUDE`). The fork carries its own AI.md entry.
+- **`typeset.rs` (~16 LOC changed):** FreeType's `FT_Fixed`/`FT_Pos` are C `long`, 64-bit on Linux and macOS but 32-bit on Windows. The rotation matrix now casts to `FT_Fixed`, and kerning/advance values widen to `i64` through a small `wide()` helper.
+
+**Defects in AI-written code, caught by clippy before commit.** The first version used `i64::from(...)` inline and was described to the maintainer as compiling cleanly everywhere; on Linux, where the value is already `i64`, clippy's `useless_conversion` rejects it under `-D warnings`. The second attempt, `as i64`, failed the same way (`unnecessary_cast`). The `wide()` helper scopes one `#[allow(clippy::useless_conversion)]` with the reason.
+
+**Testing.** On the Linux host: `cargo fmt --check` and `cargo clippy --workspace --all-targets --features yapocis/cuda,yapocis/ocl,yapocis/text -- -D warnings` are clean, and `cargo test --release` with the same features passes (72 tests), including `typeset_parity` ("12 text cases match FreeType output"). On the Windows VM (PoCL CPU OpenCL), everything now compiles and links; `typeset_parity` cannot run there because no parity fixtures exist for the `ocl/cpu` device, so the Windows typesetting path is compile-checked only.
+
+**Found on Windows and not fixed here** (`cargo test --release --features yapocis/ocl,yapocis/text --no-fail-fast`, 13 failures plus one crash): the bundled-text comparisons in `lib::convolve` see the bundled source cut short after its first kernel; `fft_roundtrip_and_peak` gets wrong values (`0.5878 vs -42.44+168.97i`); `tests/typed.rs` dies with `STATUS_HEAP_CORRUPTION`; the remaining parity tests stop on missing `ocl/cpu` fixtures. These are the first items of the Windows port.
+
 ### 2026-10-20 — Machine names replaced with generic descriptions (Claude Opus 5.5)
 
 The maintainer asked for the names of their two machines to be replaced in the repository: one becomes "the Linux host" and the other "the M4 MacBook". The change covers 16 lines in `AI.md`, `CLAUDE.md`, `bundle/SOURCE`, the CI workflow and two comments in `yapocis-rt`. The README never named them. Two matches were left alone, because they are an ImageNet class label in the VGG16 and ResNet50 `classes.txt` files, not a machine. Only text and comments changed.
