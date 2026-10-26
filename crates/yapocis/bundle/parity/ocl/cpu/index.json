@@ -1,0 +1,1454 @@
+{
+ "backend": "ocl",
+ "device": "cpu",
+ "seed": 20261018,
+ "rtol": 1e-05,
+ "atol": 1e-05,
+ "cases": [
+  {
+   "interface": "anisodiff",
+   "kernel": "filterImage",
+   "file": "anisodiff.filterImage.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "scalar": 3.0
+    },
+    {
+     "scalar": 0.2
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "anisodiff",
+   "kernel": "filterImage2",
+   "file": "anisodiff.filterImage2.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "scalar": 3.0
+    },
+    {
+     "scalar": 0.2
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": 1920
+  },
+  {
+   "interface": "anisodiff",
+   "kernel": "filterImage4",
+   "file": "anisodiff.filterImage4.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "scalar": 3.0
+    },
+    {
+     "scalar": 0.2
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": 1920
+  },
+  {
+   "interface": "audio",
+   "kernel": "log_normalize",
+   "file": "audio.log_normalize.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "audio",
+   "kernel": "normalize_with_minmax",
+   "file": "audio.normalize_with_minmax.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "scalar": 0.5
+    },
+    {
+     "scalar": 0.5
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "audio",
+   "kernel": "smooth_1d",
+   "file": "audio.smooth_1d.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "scalar": 3
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "colormath",
+   "kernel": "transform",
+   "file": "colormath.transform.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "scalar": 28
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": 1920
+  },
+  {
+   "interface": "colormath",
+   "kernel": "xyz2xyY",
+   "file": "colormath.xyz2xyY.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": 1920
+  },
+  {
+   "interface": "colormath",
+   "kernel": "xyY2xyz",
+   "file": "colormath.xyY2xyz.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": 1920
+  },
+  {
+   "interface": "convolve.box3",
+   "kernel": "box3",
+   "file": "convolve.box3.box3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolve.box5",
+   "kernel": "box5",
+   "file": "convolve.box5.box5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolve.edge3",
+   "kernel": "edge3",
+   "file": "convolve.edge3.edge3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolve.binomial5",
+   "kernel": "binomial5",
+   "file": "convolve.binomial5.binomial5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "hamming5",
+   "file": "convolves.hamming5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "hamming9",
+   "file": "convolves.hamming9.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "hamming13",
+   "file": "convolves.hamming13.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "hamming17",
+   "file": "convolves.hamming17.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "hamming25",
+   "file": "convolves.hamming25.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "hann5",
+   "file": "convolves.hann5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "hann9",
+   "file": "convolves.hann9.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "hann13",
+   "file": "convolves.hann13.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "hann17",
+   "file": "convolves.hann17.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "hann25",
+   "file": "convolves.hann25.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "blackman7",
+   "file": "convolves.blackman7.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "blackman11",
+   "file": "convolves.blackman11.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "blackman15",
+   "file": "convolves.blackman15.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "blackman21",
+   "file": "convolves.blackman21.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "bartlett5",
+   "file": "convolves.bartlett5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "bartlett9",
+   "file": "convolves.bartlett9.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "bartlett13",
+   "file": "convolves.bartlett13.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "bartlett17",
+   "file": "convolves.bartlett17.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "box3",
+   "file": "convolves.box3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "box5",
+   "file": "convolves.box5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "box7",
+   "file": "convolves.box7.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "box9",
+   "file": "convolves.box9.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "box11",
+   "file": "convolves.box11.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "box15",
+   "file": "convolves.box15.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "box21",
+   "file": "convolves.box21.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "triangle3",
+   "file": "convolves.triangle3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "triangle5",
+   "file": "convolves.triangle5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "triangle7",
+   "file": "convolves.triangle7.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "triangle9",
+   "file": "convolves.triangle9.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "triangle11",
+   "file": "convolves.triangle11.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "binomial3",
+   "file": "convolves.binomial3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "binomial5",
+   "file": "convolves.binomial5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "binomial7",
+   "file": "convolves.binomial7.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "binomial9",
+   "file": "convolves.binomial9.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "deriv13",
+   "file": "convolves.deriv13.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "deriv15",
+   "file": "convolves.deriv15.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "deriv17",
+   "file": "convolves.deriv17.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "deriv23",
+   "file": "convolves.deriv23.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "deriv25",
+   "file": "convolves.deriv25.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "deriv27",
+   "file": "convolves.deriv27.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "sobel3",
+   "file": "convolves.sobel3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "prewitt3",
+   "file": "convolves.prewitt3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "sharpen3",
+   "file": "convolves.sharpen3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "sharpen5",
+   "file": "convolves.sharpen5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "unsharp3",
+   "file": "convolves.unsharp3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "unsharp5",
+   "file": "convolves.unsharp5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "unsharp7",
+   "file": "convolves.unsharp7.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "dog5",
+   "file": "convolves.dog5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "dog7",
+   "file": "convolves.dog7.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "dog9",
+   "file": "convolves.dog9.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "dog11",
+   "file": "convolves.dog11.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "edge3",
+   "file": "convolves.edge3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "edge5",
+   "file": "convolves.edge5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "savgol5",
+   "file": "convolves.savgol5.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolves",
+   "kernel": "savgol7",
+   "file": "convolves.savgol7.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolvesep",
+   "kernel": "gauss9",
+   "file": "convolvesep.gauss9.npz",
+   "args": [
+    {
+     "scalar": 1
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolvesep",
+   "kernel": "gauss13",
+   "file": "convolvesep.gauss13.npz",
+   "args": [
+    {
+     "scalar": 1
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolvesep",
+   "kernel": "gauss19",
+   "file": "convolvesep.gauss19.npz",
+   "args": [
+    {
+     "scalar": 1
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolvesep",
+   "kernel": "gauss27",
+   "file": "convolvesep.gauss27.npz",
+   "args": [
+    {
+     "scalar": 1
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolvesep",
+   "kernel": "gauss39",
+   "file": "convolvesep.gauss39.npz",
+   "args": [
+    {
+     "scalar": 1
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolvesep",
+   "kernel": "gauss59",
+   "file": "convolvesep.gauss59.npz",
+   "args": [
+    {
+     "scalar": 1
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolvesep",
+   "kernel": "gauss87",
+   "file": "convolvesep.gauss87.npz",
+   "args": [
+    {
+     "scalar": 1
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "convolvesep",
+   "kernel": "gauss127",
+   "file": "convolvesep.gauss127.npz",
+   "args": [
+    {
+     "scalar": 1
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "demo",
+   "kernel": "sum",
+   "file": "demo.sum.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "gradient",
+   "kernel": "gradient",
+   "file": "gradient.gradient.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "scalar": 3
+    }
+   ],
+   "outputs": [
+    "out_0",
+    "out_1"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "hsi",
+   "kernel": "rgb2hsi3",
+   "file": "hsi.rgb2hsi3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": 1920
+  },
+  {
+   "interface": "hsi",
+   "kernel": "hsi2rgb3",
+   "file": "hsi.hsi2rgb3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": 1920
+  },
+  {
+   "interface": "imageops",
+   "kernel": "clamp_pixels",
+   "file": "imageops.clamp_pixels.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "scalar": 0.2
+    },
+    {
+     "scalar": 0.8
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "imageops",
+   "kernel": "stretch",
+   "file": "imageops.stretch.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "scalar": 0.0
+    },
+    {
+     "scalar": 1.0
+    },
+    {
+     "scalar": 0.2
+    },
+    {
+     "scalar": 0.8
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "imageops",
+   "kernel": "binarize",
+   "file": "imageops.binarize.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "scalar": 0.01
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "mandelbrot",
+   "kernel": "mandelbrot",
+   "file": "mandelbrot.mandelbrot.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "scalar": 40
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "median3x3",
+   "kernel": "median3x3",
+   "file": "median3x3.median3x3.npz",
+   "args": [
+    {
+     "array": "in_0"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "operators",
+   "kernel": "add",
+   "file": "operators.add.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "operators",
+   "kernel": "sub",
+   "file": "operators.sub.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "operators",
+   "kernel": "mul",
+   "file": "operators.mul.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "operators",
+   "kernel": "divop",
+   "file": "operators.divop.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "operators",
+   "kernel": "div",
+   "file": "operators.div.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "zcs",
+   "kernel": "zcs1",
+   "file": "zcs.zcs1.npz",
+   "args": [
+    {
+     "scalar": 0.01
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "zcs",
+   "kernel": "zcs2",
+   "file": "zcs.zcs2.npz",
+   "args": [
+    {
+     "scalar": 0.01
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": 1920
+  },
+  {
+   "interface": "zcs",
+   "kernel": "zcs3",
+   "file": "zcs.zcs3.npz",
+   "args": [
+    {
+     "scalar": 0.01
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": 1920
+  },
+  {
+   "interface": "zcs",
+   "kernel": "zcs4",
+   "file": "zcs.zcs4.npz",
+   "args": [
+    {
+     "scalar": 0.01
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": 1920
+  },
+  {
+   "interface": "zcs",
+   "kernel": "sub",
+   "file": "zcs.sub.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "array": "in_1"
+    }
+   ],
+   "outputs": [
+    "out_0"
+   ],
+   "global_size": null
+  }
+ ]
+}
