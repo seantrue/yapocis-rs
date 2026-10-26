@@ -17,6 +17,16 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-10-26 — main merged into dev; bundle from yapocis3 dev `2909778` (Claude Opus 5.5)
+
+**What the maintainer asked for.** "Move the pin" in impcraft and impressionist-rs to the commit with the Windows fixes. Those repositories pin `dev`, which had diverged from `main` here and in yapocis3; the maintainer chose to merge main into dev in both.
+
+**Defect: work aimed at the wrong branch.** The Windows fixes (#1) went to `main` while the downstream projects build from `dev`, and the FFT race they carried was already fixed on dev (yapocis3 `80884c3`, patched into dev's bundle by hand on 2026-10-22). Claude had not looked at dev; the mismatch surfaced only when `npexact`, which exists only on dev, failed to resolve at the main commit.
+
+**What the AI did.** Merged main into dev (#2). Code (`typeset.rs`, `typed.rs`, `.gitattributes`, the freetype-sys patch) merged without conflicts. The bundle was not hand-merged: it was exported again from yapocis3 dev after that repository's own main-into-dev merge, and differs from dev's previous bundle only in the FFT sources and their hashes and the two HSI dispatch entries (checked structurally). `SOURCE` now names that commit, so `bundle-drift` can rebuild it. AI.md keeps both sides' entries; this entry followed in a second commit because the edit adding it failed and the merge was committed without it.
+
+**Verification (yellowfin).** `cargo test --workspace --features yapocis/ocl,yapocis/cuda` on the RTX 3080 (CUDA and NVIDIA OpenCL): 95 passed, 0 failed, including `parity_with_python_outputs`. `scripts/check-bundle.sh` against yapocis3 `2909778`: up to date; CI `build` and `bundle-drift` pass. Windows and Metal were not rerun for the merge.
+
 ### 2026-10-26 — Windows test failures fixed: bundle from yapocis3 #60, LF checkouts, `div` tolerance (Claude Opus 5.5)
 
 **What the maintainer asked for.** "address the windows failures", which are the ones listed at the end of the previous entry. For the heap corruption the maintainer asked for the valgrind command line, ran it, and had the log read. Offered a test-side fix or a fix at the source, they chose "Fix at the source. Then address FFT, div test." A PoCL link failure that the first fixes exposed got "Apply workaround, test in isolation". Then CPMD.
