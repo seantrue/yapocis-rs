@@ -11639,19 +11639,19 @@
       "sources": {
         "ocl": {
           "path": "ocl/fft.cl",
-          "sha256": "16f812cd8d6e5c28fb0719732b08eab24f5119720c506bac56692ef91f7d2c6c",
+          "sha256": "b7edb62c408a13dafd06a98c3f700be5dffcd78ac70c2aac6ae8aaeec1f17b61",
           "build_options": [
             "-cl-opt-disable"
           ]
         },
         "metal": {
           "path": "metal/fft.metal",
-          "sha256": "6c92d5bfc5b01b614c71b55f71e1e5bd2f7b1f28cee64bb0a9ca24114e094ee6",
+          "sha256": "decef08a0c4f85de4e07f5841134c049bb177d2c86a79ab241690890ad4f75dc",
           "build_options": []
         },
         "cuda": {
           "path": "cuda/fft.cu",
-          "sha256": "af2b23b3ad6f8097077d4eca2362a341e0ef0f1cf942c14c1993e9f09b2b4689",
+          "sha256": "0d179886014a1865750a61c3aa61fac7bd2cf1bf5f4d34fc6f34ed4438c79266",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",
@@ -14510,7 +14510,7 @@
       "name": "hsi",
       "variant": "default",
       "id": "hsi",
-      "interface_text": "interface hsi {\n    kernel rgb2hsi(in float r, in float g, in float b, out_like float r, out_like float r, out_like float r);\n    kernel hsi2rgb(in float h, in float s, in float i, out_like h, out_like h, out_like h);\n    kernel rgb2hsi3(depth_of rgb, in float rgb, out_like rgb);\n    kernel hsi2rgb3(depth_of hsi, in float hsi, out_like hsi);\n};\n",
+      "interface_text": "interface hsi {\n    kernel rgb2hsi(in float r, in float g, in float b, out_like float r, out_like float r, out_like float r);\n    kernel hsi2rgb(in float h, in float s, in float i, out_like h, out_like h, out_like h);\n    # One work-item per (H, W, depth) pixel; the kernels index gid*depth with no bounds check.\n    kernel rgb2hsi3(depth_of rgb, in float rgb, out_like rgb);\n    with { dispatch_size (dim_0_of rgb * dim_1_of rgb); };\n    kernel hsi2rgb3(depth_of hsi, in float hsi, out_like hsi);\n    with { dispatch_size (dim_0_of hsi * dim_1_of hsi); };\n};\n",
       "kernels": [
         {
           "name": "rgb2hsi",
@@ -14715,7 +14715,21 @@
           "returns": [
             "out_like_rgb"
           ],
-          "dispatch_size": null,
+          "dispatch_size": [
+            {
+              "op": "*",
+              "lhs": {
+                "dim": "dim_0_of",
+                "of": "rgb",
+                "param_index": 0
+              },
+              "rhs": {
+                "dim": "dim_1_of",
+                "of": "rgb",
+                "param_index": 0
+              }
+            }
+          ],
           "cuda": {
             "takes_global_size": true
           },
@@ -14762,7 +14776,21 @@
           "returns": [
             "out_like_hsi"
           ],
-          "dispatch_size": null,
+          "dispatch_size": [
+            {
+              "op": "*",
+              "lhs": {
+                "dim": "dim_0_of",
+                "of": "hsi",
+                "param_index": 0
+              },
+              "rhs": {
+                "dim": "dim_1_of",
+                "of": "hsi",
+                "param_index": 0
+              }
+            }
+          ],
           "cuda": {
             "takes_global_size": true
           },

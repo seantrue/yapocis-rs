@@ -56,7 +56,14 @@ fn operators_variants_and_resident() {
         let m = ops.mul(&a.view(), &b.view()).unwrap();
         assert_eq!(m[[5, 3]], 2.0 * a[[5, 3]], "{device:?}");
         let d = ops.div(&a.view(), &b.view()).unwrap();
-        assert_eq!(d[[5, 3]], a[[5, 3]] / 2.0, "{device:?}");
+        // operators builds with -cl-fast-relaxed-math, where x / y may be off by 2.5 ulp
+        // (CPU OpenCL returns 21.499998 for 43 / 2), so compare within 3 ulp, not exactly
+        let want = a[[5, 3]] / 2.0;
+        assert!(
+            (d[[5, 3]] - want).abs() <= 3.0 * f32::EPSILON * want.abs(),
+            "{device:?}: {} vs {want}",
+            d[[5, 3]]
+        );
         // resident extension: all three on the device
         let a_dev = device.upload(a.as_slice().unwrap(), a.shape()).unwrap();
         let b_dev = device.upload(b.as_slice().unwrap(), b.shape()).unwrap();
