@@ -1,0 +1,5 @@
+# Check out LF everywhere, including on Windows (where Git defaults to core.autocrlf=true).
+# The kernel bundle is generated data: build.rs embeds it with include_str!, the generators slice
+# it with newline-sensitive markers, and its text is hashed and compared against recorded output,
+# so CRLF in a Windows checkout silently changes what the kernels compile from.
+* text=auto eol=lf

@@ -29,3 +29,9 @@ sha2 = "0.10"
 dirs = "6"
 approx = "0.5"
 anyhow = "1"
+
+# freetype-sys 0.23.0 (freetype-rs's `bundled` build, used by yapocis's `text` feature) compiles
+# its libpng with an include path that only exists in a git checkout, so MSVC can't find zlib.h.
+# The fork takes zlib's headers from libz-sys (DEP_Z_INCLUDE); drop this once a release does.
+[patch.crates-io]
+freetype-sys = { git = "https://github.com/seantrue/freetype-sys", rev = "900ebc52dedd4755cdf2b786a0e7778b1b87f5af" }

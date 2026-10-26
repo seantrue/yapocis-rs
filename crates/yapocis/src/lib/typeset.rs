@@ -8,6 +8,7 @@
 use crate::fonts;
 use crate::{Error, Result};
 use freetype::face::{KerningMode, LoadFlag};
+use freetype::ffi::{FT_Fixed, FT_Pos};
 use freetype::{Library, Matrix, Vector};
 use ndarray::Array2;
 use std::cell::RefCell;
@@ -69,6 +70,13 @@ struct GlyphInfo {
     data: Vec<u8>,
 }
 
+/// Widens a FreeType position (a C `long`) to `i64`: 32-bit on Windows, already `i64` on
+/// Linux/macOS, where clippy would otherwise call the conversion useless.
+#[allow(clippy::useless_conversion)]
+fn wide(v: FT_Pos) -> i64 {
+    i64::from(v)
+}
+
 /// One pass over `text`: FreeType metrics per glyph, with the Python module's
 /// transform (rotation matrix in 16.16, zero delta) and kerning calls.
 fn layout(face: &freetype::Face, text: &str, size: f64, angle_deg: f64) -> Result<Vec<GlyphInfo>> {
@@ -76,10 +84,11 @@ fn layout(face: &freetype::Face, text: &str, size: f64, angle_deg: f64) -> Resul
         .map_err(|e| Error::Invalid(format!("set_char_size: {e}")))?;
     let angle = (angle_deg / 180.0) * std::f64::consts::PI;
     let mut matrix = Matrix {
-        xx: (angle.cos() * 65536.0) as i64,
-        xy: (-angle.sin() * 65536.0) as i64,
-        yx: (angle.sin() * 65536.0) as i64,
-        yy: (angle.cos() * 65536.0) as i64,
+        // FT_Fixed is a C `long`: 64-bit on Linux/macOS, 32-bit on Windows.
+        xx: (angle.cos() * 65536.0) as FT_Fixed,
+        xy: (-angle.sin() * 65536.0) as FT_Fixed,
+        yx: (angle.sin() * 65536.0) as FT_Fixed,
+        yy: (angle.cos() * 65536.0) as FT_Fixed,
     };
     let mut delta = Vector { x: 0, y: 0 };
     face.set_transform(&mut matrix, &mut delta);
@@ -107,13 +116,13 @@ fn layout(face: &freetype::Face, text: &str, size: f64, angle_deg: f64) -> Resul
             data.extend_from_slice(&buffer[start..start + width as usize]);
         }
         out.push(GlyphInfo {
-            kerning_x: kerning.x,
+            kerning_x: wide(kerning.x),
             left: glyph.bitmap_left() as i64,
             rows,
             top: glyph.bitmap_top() as i64,
             width,
-            advance_x: glyph.advance().x,
-            advance_y: glyph.advance().y,
+            advance_x: wide(glyph.advance().x),
+            advance_y: wide(glyph.advance().y),
             data,
         });
     }
