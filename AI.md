@@ -17,6 +17,56 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-10-26 — main merged into dev; bundle from yapocis3 dev `2909778` (Claude Opus 5.5)
+
+**What the maintainer asked for.** "Move the pin" in impcraft and impressionist-rs to the commit with the Windows fixes. Those repositories pin `dev`, which had diverged from `main` here and in yapocis3; the maintainer chose to merge main into dev in both.
+
+**Defect: work aimed at the wrong branch.** The Windows fixes (#1) went to `main` while the downstream projects build from `dev`, and the FFT race they carried was already fixed on dev (yapocis3 `80884c3`, patched into dev's bundle by hand on 2026-10-22). Claude had not looked at dev; the mismatch surfaced only when `npexact`, which exists only on dev, failed to resolve at the main commit.
+
+**What the AI did.** Merged main into dev (#2). Code (`typeset.rs`, `typed.rs`, `.gitattributes`, the freetype-sys patch) merged without conflicts. The bundle was not hand-merged: it was exported again from yapocis3 dev after that repository's own main-into-dev merge, and differs from dev's previous bundle only in the FFT sources and their hashes and the two HSI dispatch entries (checked structurally). `SOURCE` now names that commit, so `bundle-drift` can rebuild it. AI.md keeps both sides' entries; this entry followed in a second commit because the edit adding it failed and the merge was committed without it.
+
+**Verification (yellowfin).** `cargo test --workspace --features yapocis/ocl,yapocis/cuda` on the RTX 3080 (CUDA and NVIDIA OpenCL): 95 passed, 0 failed, including `parity_with_python_outputs`. `scripts/check-bundle.sh` against yapocis3 `2909778`: up to date; CI `build` and `bundle-drift` pass. Windows and Metal were not rerun for the merge.
+
+### 2026-10-26 — Windows test failures fixed: bundle from yapocis3 #60, LF checkouts, `div` tolerance (Claude Opus 5.5)
+
+**What the maintainer asked for.** "address the windows failures", which are the ones listed at the end of the previous entry. For the heap corruption the maintainer asked for the valgrind command line, ran it, and had the log read. Offered a test-side fix or a fix at the source, they chose "Fix at the source. Then address FFT, div test." A PoCL link failure that the first fixes exposed got "Apply workaround, test in isolation". Then CPMD.
+
+**What the AI did.**
+
+- **`.gitattributes` (`* text=auto eol=lf`).** Git for Windows defaults to `core.autocrlf=true`, so the bundle checked out with CRLF. `build.rs` embeds it with `include_str!`, and the generators slice it on newline-sensitive markers, so the source was cut short after its first kernel. This fixes the `lib::convolve` bundled-text failures.
+- **Bundle re-exported from yapocis3 `5453d0b`** (the fixes themselves are recorded in yapocis3's AI.md). `SOURCE` records the provenance. Changes:
+  - The FFT templates no longer race two work-items on one radix-2 butterfly. This caused the wrong `fft_roundtrip_and_peak` values.
+  - `rgb2hsi3`/`hsi2rgb3` declare a per-pixel `dispatch_size`. The raw interface launched one work-item per float and wrote 3x past the output buffer: that was `STATUS_HEAP_CORRUPTION` in `tests/typed.rs`, and a PoCL abort under valgrind on Linux.
+  - OpenCL `window`/`power_spectrum` no longer call `get_global_size()`, which PoCL 7.2 on Windows cannot link under `-cl-opt-disable`.
+  - Parity fixtures were not re-recorded.
+- **`tests/typed.rs` (~8 LOC).** `operators` is built with `-cl-fast-relaxed-math`, which allows `x / y` to be off by 2.5 ulp, and CPU OpenCL returns 21.499998 for 43 / 2. The `div` check now allows 3 ulp instead of requiring exact equality.
+
+**Defects in AI-written code and testing.**
+
+- Three of Claude's test runs on the Linux host left out `--features ocl`. Every test looped over zero devices and passed, and that included a `div` "pass" Claude nearly reported. Claude caught it from the 0.00 s run times. The figures below come from runs with the backend enabled.
+- The tests open each backend's first device and ignore device selection. On the Linux host that is the P40, or PoCL when it is installed, and neither has fixtures. Parity was replayed by pinning to the RTX 3080 (`CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=…`, and `OCL_ICD_FILENAMES` with an empty `OCL_ICD_VENDORS` directory). This limitation remains.
+
+**Testing.**
+
+- `cargo fmt --check` and `cargo clippy --workspace --all-targets --features yapocis/cuda,yapocis/ocl,yapocis/text -- -D warnings` are clean.
+- RTX 3080 (`--features ocl,cuda,text`): all 56 tests pass. Parity replays 95 cases on CUDA and 95 on OpenCL, with no mismatches.
+- PoCL on Linux and on the Windows VM (`--features ocl,text`): everything passes except the 8 tests that have no fixtures for a CPU device (`cnn_kernels_match_python`, five graphics parity tests, `parity_with_python_outputs`, `truetrace_gpu_segments_match_python`).
+
+### 2026-10-25 — `text` builds on Windows: patched freetype-sys, C `long` widths in typesetting (Claude Opus 5.5)
+
+**What the maintainer asked for.** A Windows 11 development VM for porting this stack, then, of the fixes offered for the first Windows build failures: "1,2,4", meaning fork freetype-sys with the fix, consume the fork through `[patch]`, and fix the type errors here. They ruled out proposing the change upstream: "many repos don't want AI proposing changes."
+
+**What the AI did.**
+
+- **`Cargo.toml` (~6 LOC):** `[patch.crates-io] freetype-sys` points at the maintainer's fork (`seantrue/freetype-sys`, rev `900ebc5`). The published 0.23.0 compiles its bundled libpng with `-I libz-sys/src/zlib`, a path that exists only in a git checkout, so MSVC stops on `zlib.h`; the fork takes zlib's headers from libz-sys (`DEP_Z_INCLUDE`). The fork carries its own AI.md entry.
+- **`typeset.rs` (~16 LOC changed):** FreeType's `FT_Fixed`/`FT_Pos` are C `long`, 64-bit on Linux and macOS but 32-bit on Windows. The rotation matrix now casts to `FT_Fixed`, and kerning/advance values widen to `i64` through a small `wide()` helper.
+
+**Defects in AI-written code, caught by clippy before commit.** The first version used `i64::from(...)` inline and was described to the maintainer as compiling cleanly everywhere; on Linux, where the value is already `i64`, clippy's `useless_conversion` rejects it under `-D warnings`. The second attempt, `as i64`, failed the same way (`unnecessary_cast`). The `wide()` helper scopes one `#[allow(clippy::useless_conversion)]` with the reason.
+
+**Testing.** On the Linux host: `cargo fmt --check` and `cargo clippy --workspace --all-targets --features yapocis/cuda,yapocis/ocl,yapocis/text -- -D warnings` are clean, and `cargo test --release` with the same features passes (72 tests), including `typeset_parity` ("12 text cases match FreeType output"). On the Windows VM (PoCL CPU OpenCL), everything now compiles and links; `typeset_parity` cannot run there because no parity fixtures exist for the `ocl/cpu` device, so the Windows typesetting path is compile-checked only.
+
+**Found on Windows and not fixed here** (`cargo test --release --features yapocis/ocl,yapocis/text --no-fail-fast`, 13 failures plus one crash): the bundled-text comparisons in `lib::convolve` see the bundled source cut short after its first kernel; `fft_roundtrip_and_peak` gets wrong values (`0.5878 vs -42.44+168.97i`); `tests/typed.rs` dies with `STATUS_HEAP_CORRUPTION`; the remaining parity tests stop on missing `ocl/cpu` fixtures. These are the first items of the Windows port.
+
 ### 2026-10-23 — Pillow's resize, exact CNN preprocessing, numpy's complex abs, and the FFT race (Claude Opus 5.5)
 
 **What the maintainer asked for.** "Port all the nodes": ImpCraft's local engine on impressionist-rs, with every node bit-exact against its Python engine.
