@@ -51652,6 +51652,9 @@
         105
        ]
       },
+      "dispatch_global_size": [
+       21
+      ],
       "kernel_args": [
        {
         "arg": 0,
@@ -52091,6 +52094,9 @@
         105
        ]
       },
+      "dispatch_global_size": [
+       21
+      ],
       "kernel_args": [
        {
         "arg": 0,

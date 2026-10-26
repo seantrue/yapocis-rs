@@ -17,6 +17,31 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-10-26 — Windows test failures fixed: bundle from yapocis3 #60, LF checkouts, `div` tolerance (Claude Opus 5.5)
+
+**What the maintainer asked for.** "address the windows failures", which are the ones listed at the end of the previous entry. For the heap corruption the maintainer asked for the valgrind command line, ran it, and had the log read. Offered a test-side fix or a fix at the source, they chose "Fix at the source. Then address FFT, div test." A PoCL link failure that the first fixes exposed got "Apply workaround, test in isolation". Then CPMD.
+
+**What the AI did.**
+
+- **`.gitattributes` (`* text=auto eol=lf`).** Git for Windows defaults to `core.autocrlf=true`, so the bundle checked out with CRLF. `build.rs` embeds it with `include_str!`, and the generators slice it on newline-sensitive markers, so the source was cut short after its first kernel. This fixes the `lib::convolve` bundled-text failures.
+- **Bundle re-exported from yapocis3 `5453d0b`** (the fixes themselves are recorded in yapocis3's AI.md). `SOURCE` records the provenance. Changes:
+  - The FFT templates no longer race two work-items on one radix-2 butterfly. This caused the wrong `fft_roundtrip_and_peak` values.
+  - `rgb2hsi3`/`hsi2rgb3` declare a per-pixel `dispatch_size`. The raw interface launched one work-item per float and wrote 3x past the output buffer: that was `STATUS_HEAP_CORRUPTION` in `tests/typed.rs`, and a PoCL abort under valgrind on Linux.
+  - OpenCL `window`/`power_spectrum` no longer call `get_global_size()`, which PoCL 7.2 on Windows cannot link under `-cl-opt-disable`.
+  - Parity fixtures were not re-recorded.
+- **`tests/typed.rs` (~8 LOC).** `operators` is built with `-cl-fast-relaxed-math`, which allows `x / y` to be off by 2.5 ulp, and CPU OpenCL returns 21.499998 for 43 / 2. The `div` check now allows 3 ulp instead of requiring exact equality.
+
+**Defects in AI-written code and testing.**
+
+- Three of Claude's test runs on the Linux host left out `--features ocl`. Every test looped over zero devices and passed, and that included a `div` "pass" Claude nearly reported. Claude caught it from the 0.00 s run times. The figures below come from runs with the backend enabled.
+- The tests open each backend's first device and ignore device selection. On the Linux host that is the P40, or PoCL when it is installed, and neither has fixtures. Parity was replayed by pinning to the RTX 3080 (`CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=…`, and `OCL_ICD_FILENAMES` with an empty `OCL_ICD_VENDORS` directory). This limitation remains.
+
+**Testing.**
+
+- `cargo fmt --check` and `cargo clippy --workspace --all-targets --features yapocis/cuda,yapocis/ocl,yapocis/text -- -D warnings` are clean.
+- RTX 3080 (`--features ocl,cuda,text`): all 56 tests pass. Parity replays 95 cases on CUDA and 95 on OpenCL, with no mismatches.
+- PoCL on Linux and on the Windows VM (`--features ocl,text`): everything passes except the 8 tests that have no fixtures for a CPU device (`cnn_kernels_match_python`, five graphics parity tests, `parity_with_python_outputs`, `truetrace_gpu_segments_match_python`).
+
 ### 2026-10-25 — `text` builds on Windows: patched freetype-sys, C `long` widths in typesetting (Claude Opus 5.5)
 
 **What the maintainer asked for.** A Windows 11 development VM for porting this stack, then, of the fixes offered for the first Windows build failures: "1,2,4", meaning fork freetype-sys with the fix, consume the fork through `[patch]`, and fix the type errors here. They ruled out proposing the change upstream: "many repos don't want AI proposing changes."
