@@ -17,6 +17,16 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-10-26 — Parity fixtures for CPU OpenCL (PoCL 7.2), recorded on the Windows VM (Claude Opus 5.5)
+
+**What the maintainer asked for.** Eight tests failed on the Windows VM because no fixtures existed for its only OpenCL device, PoCL on the CPU. The maintainer: "You may be able to record PoCL fixtures on yellowfin", then "Go ahead and record the fixtures after the build".
+
+**Where they were recorded, and why not on the Linux host.** The Linux host's PoCLs are 1.8 (LLVM 11, the system ICD) and 3.0-rc2 (LLVM 14, PyPI's `pocl-binary-distribution`), and both name the device `pthread-Intel(R) Xeon(R) …`. The VM's is PoCL 7.2 (LLVM 22) named `cpu`. The tests look fixtures up by device slug, and a compiler eleven major versions older need not reproduce PoCL 7.2's results, so the fixtures were recorded on the VM with the yapocis3 commit `SOURCE` names: `yapocis-tools bundle --parity ocl --parity-lib ocl`.
+
+**What the AI did.** `bundle/parity/ocl/cpu/` (95 kernel cases) and `bundle/parity/lib/ocl/cpu/` (67 library cases), 166 files, 3.1 MB; a `parity (cpu)` line in `SOURCE`. Skipped by the recorder: the HSI pair (not reproducible) and the two CNN models (no weights on the VM). The recording first failed on yapocis3's default-encoding file writes (cp1252 on Windows); it was done with `PYTHONUTF8=1`, and that bug is fixed in yapocis3 separately. The two `index.json` files were written with `\r\n` and are committed with `\n` (`.gitattributes`); the `.npz` files are byte-identical to the recording.
+
+**Testing.** On the VM, dev `36e9b4f` with these fixtures: `cargo test --release --workspace --features yapocis/ocl,yapocis/text`: 95 passed, 0 failed, including the eight that had no fixtures (`parity_with_python_outputs`, `cnn_kernels_match_python`, `truetrace_gpu_segments_match_python` and the five graphics parity tests). These tests fail when they find no cases, so they compared PoCL results. They cover PoCL 7.2 named `cpu` only; the Linux host's PoCL still has none.
+
 ### 2026-10-26 — main merged into dev; bundle from yapocis3 dev `2909778` (Claude Opus 5.5)
 
 **What the maintainer asked for.** "Move the pin" in impcraft and impressionist-rs to the commit with the Windows fixes. Those repositories pin `dev`, which had diverged from `main` here and in yapocis3; the maintainer chose to merge main into dev in both.

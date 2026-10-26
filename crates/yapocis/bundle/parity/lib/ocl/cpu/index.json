@@ -1,0 +1,5200 @@
+{
+ "backend": "ocl",
+ "device": "cpu",
+ "rtol": 0.0001,
+ "atol": 0.0001,
+ "generators": {
+  "convolve": [
+   {
+    "name": "k7",
+    "file": "convolve.k7.npz",
+    "weights": [
+     0.05,
+     0.1,
+     0.2,
+     0.3,
+     0.2,
+     0.1,
+     0.05
+    ],
+    "kernel": "k7"
+   },
+   {
+    "name": "gaussian_custom",
+    "file": "convolve.gaussian_custom.npz",
+    "weights": [
+     [
+      0.00013383062461474178,
+      0.004431861620031266,
+      0.053991127420704416,
+      0.24197144565660075,
+      0.39894346935609776,
+      0.24197144565660075,
+      0.053991127420704416,
+      0.004431861620031266,
+      0.00013383062461474178
+     ],
+     [
+      0.0009542270849561245,
+      0.0031681454928963945,
+      0.008963371132443687,
+      0.021609788831716978,
+      0.04439586785088074,
+      0.07772262497331668,
+      0.11594853150070399,
+      0.14739947215128457,
+      0.15967594196360177,
+      0.14739947215128457,
+      0.11594853150070399,
+      0.07772262497331668,
+      0.04439586785088074,
+      0.021609788831716978,
+      0.008963371132443687,
+      0.0031681454928963945,
+      0.0009542270849561245
+     ]
+    ],
+    "widths": [
+     9,
+     17
+    ]
+   }
+  ],
+  "cnn": [
+   {
+    "name": "conv2d_3x3",
+    "kernel": "conv2d_3x3",
+    "file": "cnn.conv2d_3x3.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "array": "in_weights"
+     },
+     {
+      "array": "in_bias"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       5,
+       8,
+       6
+      ]
+     },
+     {
+      "scalar": 5
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "conv2d_3x3_optimized",
+    "kernel": "conv2d_3x3_optimized",
+    "file": "cnn.conv2d_3x3_optimized.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "array": "in_weights"
+     },
+     {
+      "array": "in_bias"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       5,
+       8,
+       6
+      ]
+     },
+     {
+      "scalar": 5
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "conv2d_1x1",
+    "kernel": "conv2d_1x1",
+    "file": "cnn.conv2d_1x1.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "array": "in_weights"
+     },
+     {
+      "array": "in_bias"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       5,
+       8,
+       6
+      ]
+     },
+     {
+      "scalar": 5
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "depthwise_conv2d_3x3",
+    "kernel": "depthwise_conv2d_3x3",
+    "file": "cnn.depthwise_conv2d_3x3.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "array": "in_weights"
+     },
+     {
+      "array": "in_bias"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       4,
+       8,
+       6
+      ]
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "conv2d_7x7_stride2",
+    "kernel": "conv2d_7x7_stride2",
+    "file": "cnn.conv2d_7x7_stride2.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "array": "in_weights"
+     },
+     {
+      "array": "in_bias"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       5,
+       8,
+       6
+      ]
+     },
+     {
+      "scalar": 5
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "conv2d_3x3_stride2",
+    "kernel": "conv2d_3x3_stride2",
+    "file": "cnn.conv2d_3x3_stride2.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "array": "in_weights"
+     },
+     {
+      "array": "in_bias"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       5,
+       8,
+       6
+      ]
+     },
+     {
+      "scalar": 5
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "conv2d_1x1_stride2",
+    "kernel": "conv2d_1x1_stride2",
+    "file": "cnn.conv2d_1x1_stride2.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "array": "in_weights"
+     },
+     {
+      "array": "in_bias"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       5,
+       8,
+       6
+      ]
+     },
+     {
+      "scalar": 5
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "relu_activation",
+    "kernel": "relu_activation",
+    "file": "cnn.relu_activation.npz",
+    "args": [
+     {
+      "array": "in_input"
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "gelu",
+    "kernel": "gelu",
+    "file": "cnn.gelu.npz",
+    "args": [
+     {
+      "array": "in_input"
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "softmax",
+    "kernel": "softmax",
+    "file": "cnn.softmax.npz",
+    "args": [
+     {
+      "array": "in_input"
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "sigmoid",
+    "kernel": "sigmoid",
+    "file": "cnn.sigmoid.npz",
+    "args": [
+     {
+      "array": "in_input"
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "max_pool_2x2",
+    "kernel": "max_pool_2x2",
+    "file": "cnn.max_pool_2x2.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       4,
+       8,
+       6
+      ]
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "max_pool_3x3_stride2",
+    "kernel": "max_pool_3x3_stride2",
+    "file": "cnn.max_pool_3x3_stride2.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       4,
+       8,
+       6
+      ]
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "global_avg_pool",
+    "kernel": "global_avg_pool",
+    "file": "cnn.global_avg_pool.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       4
+      ]
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "global_max_pool",
+    "kernel": "global_max_pool",
+    "file": "cnn.global_max_pool.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       4
+      ]
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "batch_norm",
+    "kernel": "batch_norm",
+    "file": "cnn.batch_norm.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "array": "in_gamma"
+     },
+     {
+      "array": "in_beta"
+     },
+     {
+      "array": "in_mean"
+     },
+     {
+      "array": "in_variance"
+     },
+     {
+      "scalar": 1e-05
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "layer_norm",
+    "kernel": "layer_norm",
+    "file": "cnn.layer_norm.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "array": "in_gamma"
+     },
+     {
+      "array": "in_beta"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       4,
+       8,
+       6
+      ]
+     },
+     {
+      "scalar": 1e-05
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "layer_norm_1d",
+    "kernel": "layer_norm_1d",
+    "file": "cnn.layer_norm_1d.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "array": "in_gamma"
+     },
+     {
+      "array": "in_beta"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       33
+      ]
+     },
+     {
+      "scalar": 1e-05
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "fully_connected",
+    "kernel": "fully_connected",
+    "file": "cnn.fully_connected.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "array": "in_weights"
+     },
+     {
+      "array": "in_bias"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       10
+      ]
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "matrix_multiply_simd",
+    "kernel": "matrix_multiply_simd",
+    "file": "cnn.matrix_multiply_simd.npz",
+    "args": [
+     {
+      "array": "in_A"
+     },
+     {
+      "array": "in_B"
+     },
+     {
+      "array": "in_bias"
+     },
+     {
+      "out": "out_C",
+      "shape": [
+       6,
+       5
+      ]
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "add_tensors",
+    "kernel": "add_tensors",
+    "file": "cnn.add_tensors.npz",
+    "args": [
+     {
+      "array": "in_input1"
+     },
+     {
+      "array": "in_input2"
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "dropout",
+    "kernel": "dropout",
+    "file": "cnn.dropout.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       4,
+       8,
+       6
+      ]
+     },
+     {
+      "scalar": 0.5
+     },
+     {
+      "scalar": 7
+     },
+     {
+      "scalar": 0
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "spatial_dropout",
+    "kernel": "spatial_dropout",
+    "file": "cnn.spatial_dropout.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       4,
+       8,
+       6
+      ]
+     },
+     {
+      "scalar": 0.5
+     },
+     {
+      "scalar": 7
+     },
+     {
+      "scalar": 0
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   },
+   {
+    "name": "upsample_2x",
+    "kernel": "upsample_2x",
+    "file": "cnn.upsample_2x.npz",
+    "args": [
+     {
+      "array": "in_input"
+     },
+     {
+      "out": "out_output",
+      "shape": [
+       4,
+       16,
+       12
+      ]
+     }
+    ],
+    "outputs": [
+     "ret_0"
+    ]
+   }
+  ],
+  "models": [],
+  "truetrace": [
+   {
+    "name": "gpu_iso0.0",
+    "file": "truetrace.gpu_iso0.0.npz",
+    "iso": 0.0,
+    "size": [
+     48,
+     40
+    ],
+    "lib_matches_per_pixel": true
+   },
+   {
+    "name": "gpu_iso1.5",
+    "file": "truetrace.gpu_iso1.5.npz",
+    "iso": 1.5,
+    "size": [
+     48,
+     40
+    ],
+    "lib_matches_per_pixel": true
+   },
+   {
+    "name": "cpu",
+    "file": "truetrace.cpu.npz",
+    "n_polys": 2,
+    "n_simp": 2,
+    "n_rings": 2,
+    "regions": [
+     {
+      "outer": 14,
+      "holes": [
+       14
+      ]
+     }
+    ],
+    "svg_regions": "truetrace.regions.svg",
+    "svg_segments": "truetrace.segments.svg"
+   },
+   {
+    "name": "lemon_0",
+    "file": "truetrace.lemon_0.npz",
+    "invert": false,
+    "otsu": 175.0,
+    "image": "lemon.jpg"
+   },
+   {
+    "name": "lemon_1",
+    "file": "truetrace.lemon_1.npz",
+    "invert": true,
+    "otsu": 175.0,
+    "image": "lemon.jpg"
+   },
+   {
+    "name": "lemon_thr",
+    "file": "truetrace.lemon_thr.npz",
+    "threshold": 0.4,
+    "image": "lemon.jpg"
+   },
+   {
+    "name": "fill",
+    "file": "truetrace.fill.npz",
+    "regions": 2,
+    "traced": [
+     "thin_cpu_iso0.75",
+     "thin_cpu_iso1.0",
+     "thin_gpu_iso0.75",
+     "thin_gpu_iso1.0",
+     "trace_cpu_iso-1.0",
+     "trace_cpu_iso0.0",
+     "trace_gpu_iso-1.0",
+     "trace_gpu_iso0.0"
+    ]
+   }
+  ],
+  "imageops": [
+   {
+    "name": "all",
+    "file": "imageops.all.npz",
+    "outputs": [
+     "binarize",
+     "clamp",
+     "clamp_wide",
+     "histeq_big",
+     "histeq_default",
+     "histeq_small",
+     "histmatch",
+     "histogram",
+     "stretch"
+    ]
+   }
+  ],
+  "simplex": [
+   {
+    "name": "all",
+    "file": "simplex.all.npz",
+    "outputs": [
+     "noise2d",
+     "noise2d_tile",
+     "noise3d",
+     "ridged",
+     "turbulence"
+    ]
+   }
+  ],
+  "anisodiff": [
+   {
+    "name": "rgb",
+    "file": "anisodiff.rgb.npz",
+    "n": 3,
+    "scale": 3.0,
+    "step_size": 0.2,
+    "frames": 3,
+    "rgb_frames": 2
+   }
+  ],
+  "fft": [
+   {
+    "name": "analysis",
+    "file": "fft.analysis.npz",
+    "sample_rate": 8000.0,
+    "outputs": [
+     "bandpass",
+     "coherence",
+     "coherence_freqs",
+     "energy",
+     "estimate_frequency",
+     "rms",
+     "snr",
+     "spec_batch",
+     "spec_batch_freqs",
+     "spec_batch_times",
+     "spec_seq",
+     "spec_seq_freqs",
+     "spec_seq_times"
+    ]
+   }
+  ],
+  "graphics": [
+   {
+    "name": "lines_grid",
+    "file": "graphics.lines_grid.npz",
+    "channels": 1,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "lines",
+      "coords": "coords_1",
+      "style": {
+       "width": 1.0,
+       "colors": "colors_2",
+       "alpha": 1.0
+      }
+     }
+    ]
+   },
+   {
+    "name": "lines_random",
+    "file": "graphics.lines_random.npz",
+    "channels": 1,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "lines",
+      "coords": "coords_1",
+      "style": {
+       "widths": "widths_2",
+       "colors": "colors_3",
+       "alphas": "alphas_4",
+       "aa_widths": "aa_widths_5"
+      }
+     }
+    ]
+   },
+   {
+    "name": "lines_zero_length",
+    "file": "graphics.lines_zero_length.npz",
+    "channels": 1,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "lines",
+      "coords": "coords_1",
+      "style": {
+       "width": 3.0,
+       "color": 1.0
+      }
+     },
+     {
+      "op": "lines",
+      "coords": "coords_2",
+      "style": {
+       "width": 1.0,
+       "color": 0.5,
+       "aa_width": 1.0
+      }
+     }
+    ]
+   },
+   {
+    "name": "rects_alpha",
+    "file": "graphics.rects_alpha.npz",
+    "channels": 1,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "rects",
+      "coords": "coords_1",
+      "style": {
+       "color": 1.0,
+       "alpha": 0.5
+      }
+     },
+     {
+      "op": "rects",
+      "coords": "coords_2",
+      "style": {
+       "colors": "colors_3",
+       "alphas": "alphas_4"
+      }
+     }
+    ]
+   },
+   {
+    "name": "circles_aa",
+    "file": "graphics.circles_aa.npz",
+    "channels": 1,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "circles",
+      "coords": "coords_1",
+      "style": {
+       "colors": "colors_2",
+       "aa_widths": "aa_widths_3"
+      }
+     },
+     {
+      "op": "circles",
+      "coords": "coords_4",
+      "style": {
+       "color": 0.8,
+       "alpha": 0.5,
+       "aa_width": 1.5
+      }
+     }
+    ]
+   },
+   {
+    "name": "triangles",
+    "file": "graphics.triangles.npz",
+    "channels": 1,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "triangles",
+      "coords": "coords_1",
+      "style": {
+       "colors": "colors_2",
+       "alphas": "alphas_3"
+      }
+     },
+     {
+      "op": "mesh_triangles",
+      "coords": "coords_4",
+      "style": {
+       "color": 0.7,
+       "alpha": 0.5,
+       "aa_width": 0.0
+      }
+     }
+    ]
+   },
+   {
+    "name": "ellipses",
+    "file": "graphics.ellipses.npz",
+    "channels": 1,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "ellipses",
+      "coords": "coords_1",
+      "style": {
+       "colors": "colors_2",
+       "aa_widths": "aa_widths_3"
+      }
+     }
+    ]
+   },
+   {
+    "name": "composite",
+    "file": "graphics.composite.npz",
+    "channels": 1,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "composite",
+      "locations": "locations_1",
+      "blocks": [
+       "block_2",
+       "block_3",
+       "block_4"
+      ],
+      "alpha": null,
+      "alphas": [
+       null,
+       0.5,
+       "mask_5"
+      ]
+     },
+     {
+      "op": "composite",
+      "locations": "locations_6",
+      "blocks": [
+       "block_7"
+      ],
+      "alpha": 0.3,
+      "alphas": null
+     }
+    ]
+   },
+   {
+    "name": "sprites",
+    "file": "graphics.sprites.npz",
+    "channels": 1,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "sprites",
+      "locations": "locations_1",
+      "sprites": [
+       "sprite_2",
+       "sprite_3",
+       "sprite_4",
+       "sprite_5"
+      ],
+      "alpha": 0.7,
+      "alphas": null
+     },
+     {
+      "op": "sprites",
+      "locations": "locations_6",
+      "sprites": [
+       "sprite_7",
+       "sprite_8",
+       "sprite_9",
+       "sprite_10"
+      ],
+      "alpha": null,
+      "alphas": [
+       1.0,
+       0.25,
+       0.5,
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "name": "text_rotations",
+    "file": "graphics.text_rotations.npz",
+    "channels": 1,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "draw_strings",
+      "locations": "locations_1",
+      "texts": [
+       "---- -180",
+       "---- -135",
+       "---- -90",
+       "---- -45",
+       "---- 000",
+       "---- 045",
+       "---- 090",
+       "---- 135"
+      ],
+      "rotations": [
+       -180,
+       -135,
+       -90,
+       -45,
+       0,
+       45,
+       90,
+       135
+      ],
+      "color": 1,
+      "alpha": "mask",
+      "size": 20
+     }
+    ]
+   },
+   {
+    "name": "text_fonts",
+    "file": "graphics.text_fonts.npz",
+    "channels": 1,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "draw_strings",
+      "locations": "locations_1",
+      "texts": [
+       "Hello, yapocis",
+       "Bold jump!",
+       "light italic"
+      ],
+      "fonts": [
+       "default",
+       "bold",
+       "lightitalic"
+      ],
+      "sizes": [
+       16,
+       24,
+       40
+      ],
+      "alpha": "bug"
+     },
+     {
+      "op": "draw_strings",
+      "locations": "locations_2",
+      "texts": [
+       "half"
+      ],
+      "alpha": 0.5,
+      "rotation": 90
+     },
+     {
+      "op": "draw_strings",
+      "locations": "locations_3",
+      "texts": [
+       "none"
+      ],
+      "size": 18
+     }
+    ]
+   }
+  ],
+  "graphics4": [
+   {
+    "name": "lines",
+    "file": "graphics4.lines.npz",
+    "channels": 4,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "lines",
+      "coords": "coords_1",
+      "style": {
+       "width": 1.5,
+       "colors": "colors_2"
+      }
+     },
+     {
+      "op": "lines",
+      "coords": "coords_3",
+      "style": {
+       "distance": 1.5,
+       "colors": "colors_4",
+       "aa_widths": "aa_widths_5"
+      }
+     },
+     {
+      "op": "lines",
+      "coords": "coords_6",
+      "style": {
+       "width": 2.0,
+       "color": [
+        1,
+        0,
+        0,
+        1
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "name": "rects_alpha",
+    "file": "graphics4.rects_alpha.npz",
+    "channels": 4,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "rects",
+      "coords": "coords_1",
+      "style": {
+       "color": [
+        0,
+        1,
+        0,
+        0.5
+       ]
+      }
+     },
+     {
+      "op": "rects",
+      "coords": "coords_2",
+      "style": {
+       "color": [
+        1,
+        0,
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "op": "rects",
+      "coords": "coords_3",
+      "style": {
+       "colors": "colors_4",
+       "aa_widths": "aa_widths_5"
+      }
+     }
+    ]
+   },
+   {
+    "name": "circles_triangles_ellipses",
+    "file": "graphics4.circles_triangles_ellipses.npz",
+    "channels": 4,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "circles",
+      "coords": "coords_1",
+      "style": {
+       "colors": "colors_2",
+       "aa_widths": "aa_widths_3"
+      }
+     },
+     {
+      "op": "triangles",
+      "coords": "coords_4",
+      "style": {
+       "colors": "colors_5"
+      }
+     },
+     {
+      "op": "mesh_triangles",
+      "coords": "coords_6",
+      "style": {
+       "color": [
+        0.2,
+        0.4,
+        0.9,
+        0.5
+       ]
+      }
+     },
+     {
+      "op": "ellipses",
+      "coords": "coords_7",
+      "style": {
+       "colors": "colors_8",
+       "aa_width": 1.0
+      }
+     }
+    ]
+   },
+   {
+    "name": "composite_sprites",
+    "file": "graphics4.composite_sprites.npz",
+    "channels": 4,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "composite",
+      "locations": "locations_1",
+      "blocks": [
+       "block_2",
+       "block_3"
+      ],
+      "alpha": null,
+      "alphas": null
+     },
+     {
+      "op": "sprites",
+      "locations": "locations_4",
+      "sprites": [
+       "sprite_5",
+       "sprite_6",
+       "sprite_7"
+      ],
+      "alpha": null,
+      "alphas": null
+     }
+    ]
+   },
+   {
+    "name": "texts",
+    "file": "graphics4.texts.npz",
+    "channels": 4,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "draw_strings",
+      "locations": "locations_1",
+      "texts": [
+       "-- 000",
+       "-- 060",
+       "-- 120",
+       "-- 180",
+       "-- 240",
+       "-- 300"
+      ],
+      "rotations": [
+       0,
+       60,
+       120,
+       180,
+       240,
+       300
+      ],
+      "colors": [
+       [
+        1,
+        0,
+        0,
+        1
+       ],
+       [
+        0,
+        1,
+        0,
+        1
+       ],
+       [
+        0,
+        0,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        0,
+        0.5
+       ],
+       [
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        0,
+        1,
+        0.7
+       ]
+      ],
+      "size": 18
+     },
+     {
+      "op": "draw_strings",
+      "locations": "locations_2",
+      "texts": [
+       "mask",
+       "bug",
+       "half",
+       "none"
+      ],
+      "alphas": [
+       "mask",
+       "bug",
+       0.5,
+       null
+      ],
+      "color": [
+       0.9,
+       0.8,
+       0.2,
+       0.6
+      ],
+      "fonts": [
+       "default",
+       "bold",
+       "medium",
+       "italic"
+      ],
+      "sizes": [
+       14,
+       20,
+       26,
+       32
+      ]
+     }
+    ]
+   }
+  ],
+  "kerneldraw": [
+   {
+    "name": "kd4_batch",
+    "file": "kerneldraw.kd4_batch.npz",
+    "kind": "kd4",
+    "chunk_size": null,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "composite",
+      "locations": "locations_1",
+      "blocks": [
+       "block_2",
+       "block_3"
+      ],
+      "alpha": null,
+      "alphas": null
+     },
+     {
+      "op": "sprites",
+      "locations": "locations_4",
+      "sprites": [
+       "sprite_5",
+       "sprite_6"
+      ],
+      "alpha": null,
+      "alphas": null
+     },
+     {
+      "op": "ellipses",
+      "coords": "coords_7",
+      "style": {
+       "colors": "colors_8"
+      }
+     },
+     {
+      "op": "circles",
+      "coords": "coords_9",
+      "style": {
+       "colors": "colors_10"
+      }
+     },
+     {
+      "op": "rects",
+      "coords": "coords_11",
+      "style": {
+       "colors": "colors_12"
+      }
+     },
+     {
+      "op": "lines",
+      "coords": "coords_13",
+      "style": {
+       "colors": "colors_14",
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "lines",
+      "coords": "coords_15",
+      "style": {
+       "color": [
+        1,
+        1,
+        1,
+        1
+       ],
+       "alpha": 0.5,
+       "distance": 2.0,
+       "aa_width": 0.5
+      }
+     },
+     {
+      "op": "render"
+     }
+    ]
+   },
+   {
+    "name": "kd4_list",
+    "file": "kerneldraw.kd4_list.npz",
+    "kind": "kd4",
+    "chunk_size": 500,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       112.0,
+       148.0,
+       132.0,
+       126.0
+      ],
+      "kw": {
+       "color": [
+        0.9636971354484558,
+        0.438234806060791,
+        0.5977316498756409,
+        0.9636440277099609
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       50.0,
+       141.0,
+       41.0,
+       164.0
+      ],
+      "kw": {
+       "color": [
+        0.7211403846740723,
+        0.7893367409706116,
+        0.7433034181594849,
+        0.05574928969144821
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       71.0,
+       44.0,
+       60.0,
+       32.0
+      ],
+      "kw": {
+       "color": [
+        0.7833433747291565,
+        0.6983025074005127,
+        0.3397761583328247,
+        0.04368310421705246
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       19.0,
+       106.0,
+       13.0,
+       83.0
+      ],
+      "kw": {
+       "color": [
+        0.35330066084861755,
+        0.5532791614532471,
+        0.3607892692089081,
+        0.5813015699386597
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       6.0,
+       71.0,
+       27.0,
+       44.0
+      ],
+      "kw": {
+       "color": [
+        0.3970959186553955,
+        0.6951447129249573,
+        0.9362309575080872,
+        0.014997685328125954
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       50.0,
+       74.0,
+       78.0,
+       53.0
+      ],
+      "kw": {
+       "color": [
+        0.618676483631134,
+        0.8105319738388062,
+        0.024106988683342934,
+        0.458527147769928
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       193.0,
+       81.0,
+       184.0,
+       77.0
+      ],
+      "kw": {
+       "color": [
+        0.8066774606704712,
+        0.6840857267379761,
+        0.3832398056983948,
+        0.3413892984390259
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       20.0,
+       129.0,
+       39.0,
+       114.0
+      ],
+      "kw": {
+       "color": [
+        0.03252337872982025,
+        0.5003828406333923,
+        0.8204852938652039,
+        0.8248818516731262
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       55.0,
+       46.0,
+       30.0,
+       56.0
+      ],
+      "kw": {
+       "color": [
+        0.7135167121887207,
+        0.4947909712791443,
+        0.24615275859832764,
+        0.2818073034286499
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       59.0,
+       152.0,
+       36.0,
+       175.0
+      ],
+      "kw": {
+       "color": [
+        0.1726212501525879,
+        0.3294545114040375,
+        0.006187741179019213,
+        0.4537661671638489
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       101.0,
+       26.0,
+       95.0,
+       4.0
+      ],
+      "kw": {
+       "color": [
+        0.7826631665229797,
+        0.3307189643383026,
+        0.8546022176742554,
+        0.5569790601730347
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       87.0,
+       92.0,
+       78.0,
+       64.0
+      ],
+      "kw": {
+       "color": [
+        0.7843535542488098,
+        0.9958924651145935,
+        0.1051870808005333,
+        0.4055623710155487
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       31.0,
+       52.0,
+       37.0,
+       67.0
+      ],
+      "kw": {
+       "color": [
+        0.16498014330863953,
+        0.13465894758701324,
+        0.7158304452896118,
+        0.004707784857600927
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       109.0,
+       72.0,
+       129.0,
+       81.0
+      ],
+      "kw": {
+       "color": [
+        0.5937632918357849,
+        0.9164526462554932,
+        0.42116233706474304,
+        0.6867809891700745
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       91.0,
+       37.0,
+       108.0,
+       59.0
+      ],
+      "kw": {
+       "color": [
+        0.13155792653560638,
+        0.7535396814346313,
+        0.7746129035949707,
+        0.5858551859855652
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       160.0,
+       0.0,
+       151.0,
+       -23.0
+      ],
+      "kw": {
+       "color": [
+        0.9167348742485046,
+        0.5506009459495544,
+        0.5953868627548218,
+        0.016659105196595192
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       196.0,
+       7.0,
+       167.0,
+       18.0
+      ],
+      "kw": {
+       "color": [
+        0.8216391801834106,
+        0.34414950013160706,
+        0.6929872035980225,
+        0.49226415157318115
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       58.0,
+       151.0,
+       37.0,
+       137.0
+      ],
+      "kw": {
+       "color": [
+        0.1552594155073166,
+        0.4784630537033081,
+        0.9322795867919922,
+        0.6541039943695068
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       41.0,
+       39.0,
+       25.0,
+       20.0
+      ],
+      "kw": {
+       "color": [
+        0.11256691813468933,
+        0.5399829149246216,
+        0.9035671949386597,
+        0.026092415675520897
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       76.0,
+       124.0,
+       74.0,
+       116.0
+      ],
+      "kw": {
+       "color": [
+        0.0014110312331467867,
+        0.8193936944007874,
+        0.5928928256034851,
+        0.7511243224143982
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       177.0,
+       2.0,
+       163.0,
+       22.0
+      ],
+      "kw": {
+       "color": [
+        0.32325419783592224,
+        0.563377857208252,
+        0.14899234473705292,
+        0.11697176843881607
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       173.0,
+       16.0,
+       154.0,
+       35.0
+      ],
+      "kw": {
+       "color": [
+        0.5529804825782776,
+        0.8508375287055969,
+        0.5425659418106079,
+        0.016701590269804
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       107.0,
+       18.0,
+       86.0,
+       38.0
+      ],
+      "kw": {
+       "color": [
+        0.0033770024310797453,
+        0.7609803080558777,
+        0.3646942675113678,
+        0.19745327532291412
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       3.0,
+       71.0,
+       21.0,
+       55.0
+      ],
+      "kw": {
+       "color": [
+        0.2584894001483917,
+        0.9223260283470154,
+        0.47970154881477356,
+        0.13817574083805084
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       58.0,
+       151.0,
+       60.0,
+       148.0
+      ],
+      "kw": {
+       "color": [
+        0.18058991432189941,
+        0.061957962810993195,
+        0.9468702077865601,
+        0.4564487040042877
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       102.0,
+       39.0,
+       125.0,
+       19.0
+      ],
+      "kw": {
+       "color": [
+        0.45005324482917786,
+        0.05886724963784218,
+        0.27581119537353516,
+        0.811130166053772
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       165.0,
+       59.0,
+       143.0,
+       42.0
+      ],
+      "kw": {
+       "color": [
+        0.8438146114349365,
+        0.4484585225582123,
+        0.28014758229255676,
+        0.957962691783905
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       23.0,
+       151.0,
+       21.0,
+       171.0
+      ],
+      "kw": {
+       "color": [
+        0.32276803255081177,
+        0.2733316719532013,
+        0.1428937166929245,
+        0.49131128191947937
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       195.0,
+       3.0,
+       184.0,
+       -21.0
+      ],
+      "kw": {
+       "color": [
+        0.8406855463981628,
+        0.5196035504341125,
+        0.8221666812896729,
+        0.3239457905292511
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       2.0,
+       48.0,
+       -21.0,
+       73.0
+      ],
+      "kw": {
+       "color": [
+        0.6862680315971375,
+        0.17599442601203918,
+        0.4580191969871521,
+        0.308244526386261
+       ],
+       "distance": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       94.0,
+       103.0,
+       76.0,
+       116.0
+      ],
+      "kw": {
+       "color": [
+        0.49819216132164,
+        0.9929576516151428,
+        0.9487618207931519,
+        0.5704104900360107
+       ],
+       "alpha": 0.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       60.0,
+       141.0,
+       89.0,
+       169.0
+      ],
+      "kw": {
+       "color": [
+        0.17165051400661469,
+        0.28784191608428955,
+        0.542525053024292,
+        0.8012466430664062
+       ],
+       "alpha": 0.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       39.0,
+       14.0,
+       58.0,
+       5.0
+      ],
+      "kw": {
+       "color": [
+        0.8911145925521851,
+        0.8789137005805969,
+        0.7788848876953125,
+        0.45560887455940247
+       ],
+       "alpha": 0.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       151.0,
+       36.0,
+       133.0,
+       38.0
+      ],
+      "kw": {
+       "color": [
+        0.5721938610076904,
+        0.2566937208175659,
+        0.557041585445404,
+        0.3747018277645111
+       ],
+       "alpha": 0.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       184.0,
+       69.0,
+       172.0,
+       40.0
+      ],
+      "kw": {
+       "color": [
+        0.5523611307144165,
+        0.036402568221092224,
+        0.09269142150878906,
+        0.656416118144989
+       ],
+       "alpha": 0.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       43.0,
+       55.0,
+       71.0,
+       73.0
+      ],
+      "kw": {
+       "color": [
+        0.4283309578895569,
+        0.22261229157447815,
+        0.968261182308197,
+        0.018321873620152473
+       ],
+       "alpha": 0.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       1.0,
+       127.0,
+       5.0,
+       119.0
+      ],
+      "kw": {
+       "color": [
+        0.9388291835784912,
+        0.8435874581336975,
+        0.00032027772977016866,
+        0.8743810653686523
+       ],
+       "alpha": 0.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       100.0,
+       113.0,
+       99.0,
+       119.0
+      ],
+      "kw": {
+       "color": [
+        0.7171089053153992,
+        0.2202230542898178,
+        0.6855721473693848,
+        0.9371646642684937
+       ],
+       "alpha": 0.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       71.0,
+       79.0,
+       66.0,
+       61.0
+      ],
+      "kw": {
+       "color": [
+        0.06455446779727936,
+        0.2975517511367798,
+        0.1280083954334259,
+        0.8701211214065552
+       ],
+       "alpha": 0.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       72.0,
+       47.0,
+       99.0,
+       57.0
+      ],
+      "kw": {
+       "color": [
+        0.12613984942436218,
+        0.1022181287407875,
+        0.09411703795194626,
+        0.8367474675178528
+       ],
+       "alpha": 0.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "circle",
+      "coords": [
+       93.0,
+       14.0,
+       3.0
+      ],
+      "kw": {
+       "color": [
+        0.5,
+        0.5,
+        1.0,
+        1.0
+       ],
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "circle",
+      "coords": [
+       45.0,
+       74.0,
+       6.0
+      ],
+      "kw": {
+       "color": [
+        0.5,
+        0.5,
+        1.0,
+        1.0
+       ],
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "circle",
+      "coords": [
+       176.0,
+       74.0,
+       14.0
+      ],
+      "kw": {
+       "color": [
+        0.5,
+        0.5,
+        1.0,
+        1.0
+       ],
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "circle",
+      "coords": [
+       184.0,
+       20.0,
+       6.0
+      ],
+      "kw": {
+       "color": [
+        0.5,
+        0.5,
+        1.0,
+        1.0
+       ],
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "circle",
+      "coords": [
+       138.0,
+       28.0,
+       17.0
+      ],
+      "kw": {
+       "color": [
+        0.5,
+        0.5,
+        1.0,
+        1.0
+       ],
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "mesh_triangle",
+      "coords": [
+       112.0,
+       54.0,
+       118.0,
+       28.0,
+       100.0,
+       25.0
+      ],
+      "kw": {
+       "color": [
+        0.9,
+        0.3,
+        0.3,
+        0.6
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "mesh_triangle",
+      "coords": [
+       178.0,
+       100.0,
+       148.0,
+       110.0,
+       153.0,
+       89.0
+      ],
+      "kw": {
+       "color": [
+        0.9,
+        0.3,
+        0.3,
+        0.6
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "mesh_triangle",
+      "coords": [
+       43.0,
+       138.0,
+       28.0,
+       148.0,
+       19.0,
+       116.0
+      ],
+      "kw": {
+       "color": [
+        0.9,
+        0.3,
+        0.3,
+        0.6
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "mesh_triangle",
+      "coords": [
+       104.0,
+       70.0,
+       110.0,
+       92.0,
+       95.0,
+       63.0
+      ],
+      "kw": {
+       "color": [
+        0.9,
+        0.3,
+        0.3,
+        0.6
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "ellipse",
+      "coords": [
+       121.0,
+       84.0,
+       5.0,
+       17.0
+      ],
+      "kw": {
+       "color": [
+        0.1,
+        0.9,
+        0.3,
+        1.0
+       ],
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "ellipse",
+      "coords": [
+       177.0,
+       43.0,
+       17.0,
+       17.0
+      ],
+      "kw": {
+       "color": [
+        0.1,
+        0.9,
+        0.3,
+        1.0
+       ],
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "ellipse",
+      "coords": [
+       94.0,
+       115.0,
+       8.0,
+       4.0
+      ],
+      "kw": {
+       "color": [
+        0.1,
+        0.9,
+        0.3,
+        1.0
+       ],
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       0,
+       10
+      ],
+      "text": "Hello world!",
+      "kw": {
+       "color": [
+        1,
+        1,
+        1,
+        0.5
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       60,
+       40
+      ],
+      "text": "Hello world!",
+      "kw": {
+       "color": [
+        1,
+        1,
+        1,
+        0.5
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       120,
+       70
+      ],
+      "text": "Hello world!",
+      "kw": {
+       "color": [
+        1,
+        1,
+        1,
+        0.5
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       180,
+       100
+      ],
+      "text": "Hello world!",
+      "kw": {
+       "color": [
+        1,
+        1,
+        1,
+        0.5
+       ]
+      }
+     },
+     {
+      "op": "render"
+     }
+    ]
+   },
+   {
+    "name": "kd4_chunk10",
+    "file": "kerneldraw.kd4_chunk10.npz",
+    "kind": "kd4",
+    "chunk_size": 10,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       15.0,
+       101.0,
+       -14.0,
+       125.0
+      ],
+      "kw": {
+       "color": [
+        0.7679260969161987,
+        0.6193035840988159,
+        0.5012670755386353,
+        0.11203651875257492
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       116.0,
+       132.0,
+       130.0,
+       121.0
+      ],
+      "kw": {
+       "color": [
+        0.8948208689689636,
+        0.6436760425567627,
+        0.6298914551734924,
+        0.961498498916626
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       14.0,
+       14.0,
+       42.0,
+       8.0
+      ],
+      "kw": {
+       "color": [
+        0.11860918998718262,
+        0.38508591055870056,
+        0.03375208005309105,
+        0.28174498677253723
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       42.0,
+       73.0,
+       19.0,
+       44.0
+      ],
+      "kw": {
+       "color": [
+        0.9984008073806763,
+        0.38163265585899353,
+        0.8255355954170227,
+        0.8622968792915344
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       17.0,
+       98.0,
+       46.0,
+       103.0
+      ],
+      "kw": {
+       "color": [
+        0.53986656665802,
+        0.8310793042182922,
+        0.21430696547031403,
+        0.07646574825048447
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       83.0,
+       30.0,
+       86.0,
+       29.0
+      ],
+      "kw": {
+       "color": [
+        0.20491310954093933,
+        0.09672483801841736,
+        0.09782551229000092,
+        0.04692954942584038
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       111.0,
+       25.0,
+       94.0,
+       32.0
+      ],
+      "kw": {
+       "color": [
+        0.07180872559547424,
+        0.11123152822256088,
+        0.5477291941642761,
+        0.3012820780277252
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       179.0,
+       156.0,
+       194.0,
+       162.0
+      ],
+      "kw": {
+       "color": [
+        0.9917137622833252,
+        0.6288844347000122,
+        0.9363808035850525,
+        0.7329934239387512
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       5.0,
+       38.0,
+       21.0,
+       9.0
+      ],
+      "kw": {
+       "color": [
+        0.8982316851615906,
+        0.943879246711731,
+        0.3893493711948395,
+        0.23430666327476501
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       22.0,
+       6.0,
+       13.0,
+       14.0
+      ],
+      "kw": {
+       "color": [
+        0.08067809045314789,
+        0.964422345161438,
+        0.23905137181282043,
+        0.9814416170120239
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       61.0,
+       54.0,
+       65.0,
+       71.0
+      ],
+      "kw": {
+       "color": [
+        0.7276819944381714,
+        0.8143049478530884,
+        0.0355389341711998,
+        0.9122061133384705
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       99.0,
+       43.0,
+       82.0,
+       72.0
+      ],
+      "kw": {
+       "color": [
+        0.0827002301812172,
+        0.8089051842689514,
+        0.034847691655159,
+        0.9499902725219727
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       60.0,
+       28.0,
+       65.0,
+       38.0
+      ],
+      "kw": {
+       "color": [
+        0.057538390159606934,
+        0.15949997305870056,
+        0.45243093371391296,
+        0.1740676313638687
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       13.0,
+       98.0,
+       -6.0,
+       108.0
+      ],
+      "kw": {
+       "color": [
+        0.11165078729391098,
+        0.3643965721130371,
+        0.057544294744729996,
+        0.5789807438850403
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       84.0,
+       6.0,
+       75.0,
+       10.0
+      ],
+      "kw": {
+       "color": [
+        0.7374737858772278,
+        0.49886295199394226,
+        0.5662446618080139,
+        0.24739189445972443
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       15.0,
+       101.0,
+       32.0,
+       104.0
+      ],
+      "kw": {
+       "color": [
+        0.47031083703041077,
+        0.6253516674041748,
+        0.9338776469230652,
+        0.5222620368003845
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       86.0,
+       69.0,
+       103.0,
+       97.0
+      ],
+      "kw": {
+       "color": [
+        0.982630729675293,
+        0.3988160192966461,
+        0.6052184104919434,
+        0.7305397987365723
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       181.0,
+       30.0,
+       190.0,
+       0.0
+      ],
+      "kw": {
+       "color": [
+        0.10354745388031006,
+        0.8330541253089905,
+        0.8311508893966675,
+        0.11707699298858643
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       167.0,
+       106.0,
+       191.0,
+       94.0
+      ],
+      "kw": {
+       "color": [
+        0.6580391526222229,
+        0.41365817189216614,
+        0.18053586781024933,
+        0.21605977416038513
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       36.0,
+       42.0,
+       52.0,
+       21.0
+      ],
+      "kw": {
+       "color": [
+        0.13874171674251556,
+        0.9290512204170227,
+        0.8233609199523926,
+        0.7374777793884277
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       60.0,
+       136.0,
+       66.0,
+       138.0
+      ],
+      "kw": {
+       "color": [
+        0.18116937577724457,
+        0.7338107228279114,
+        0.26669126749038696,
+        0.5094359517097473
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       87.0,
+       64.0,
+       97.0,
+       64.0
+      ],
+      "kw": {
+       "color": [
+        0.021356457844376564,
+        0.9136208295822144,
+        0.3450567424297333,
+        0.6937891840934753
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       32.0,
+       124.0,
+       9.0,
+       106.0
+      ],
+      "kw": {
+       "color": [
+        0.11872831732034683,
+        0.19633716344833374,
+        0.759244441986084,
+        0.702151894569397
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       47.0,
+       156.0,
+       19.0,
+       134.0
+      ],
+      "kw": {
+       "color": [
+        0.6074321866035461,
+        0.3919789791107178,
+        0.635757565498352,
+        0.9071227312088013
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       157.0,
+       18.0,
+       141.0,
+       -1.0
+      ],
+      "kw": {
+       "color": [
+        0.8240934014320374,
+        0.7901062965393066,
+        0.44766753911972046,
+        0.4504728317260742
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       162.0,
+       158.0,
+       177.0,
+       142.0
+      ],
+      "kw": {
+       "color": [
+        0.9001060128211975,
+        0.27581414580345154,
+        0.5328269600868225,
+        0.2155173271894455
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       44.0,
+       17.0,
+       73.0,
+       -1.0
+      ],
+      "kw": {
+       "color": [
+        0.4466346502304077,
+        0.23668339848518372,
+        0.8797679543495178,
+        0.9050180912017822
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       197.0,
+       15.0,
+       180.0,
+       44.0
+      ],
+      "kw": {
+       "color": [
+        0.36162278056144714,
+        0.7907284498214722,
+        0.7997721433639526,
+        0.8776717782020569
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       28.0,
+       25.0,
+       56.0,
+       46.0
+      ],
+      "kw": {
+       "color": [
+        0.7375814318656921,
+        0.2230391949415207,
+        0.63771653175354,
+        0.26587793231010437
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       42.0,
+       136.0,
+       61.0,
+       149.0
+      ],
+      "kw": {
+       "color": [
+        0.47572699189186096,
+        0.05662353336811066,
+        0.018799131736159325,
+        0.9135429859161377
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       3.0,
+       90.0,
+       -18.0,
+       62.0
+      ],
+      "kw": {
+       "color": [
+        0.46084970235824585,
+        0.4934242367744446,
+        0.6332830190658569,
+        0.031435031443834305
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       177.0,
+       63.0,
+       179.0,
+       71.0
+      ],
+      "kw": {
+       "color": [
+        0.6515848636627197,
+        0.7232279777526855,
+        0.059430066496133804,
+        0.8164008259773254
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       191.0,
+       149.0,
+       176.0,
+       169.0
+      ],
+      "kw": {
+       "color": [
+        0.5086501240730286,
+        0.5151664018630981,
+        0.3119262158870697,
+        0.05667697638273239
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       50.0,
+       40.0,
+       64.0,
+       40.0
+      ],
+      "kw": {
+       "color": [
+        0.2051561176776886,
+        0.1954454779624939,
+        0.792077898979187,
+        0.6231213212013245
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       133.0,
+       106.0,
+       124.0,
+       79.0
+      ],
+      "kw": {
+       "color": [
+        0.9458431601524353,
+        0.18636590242385864,
+        0.7868574857711792,
+        0.6760069727897644
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       50.0,
+       69.0,
+       43.0,
+       60.0
+      ],
+      "kw": {
+       "color": [
+        0.46050891280174255,
+        0.7175993323326111,
+        0.1711394190788269,
+        0.7378167510032654
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       125.0,
+       45.0,
+       129.0,
+       61.0
+      ],
+      "kw": {
+       "color": [
+        0.26811647415161133,
+        0.5350682139396667,
+        0.6652367115020752,
+        0.22405189275741577
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       65.0,
+       8.0,
+       52.0,
+       24.0
+      ],
+      "kw": {
+       "color": [
+        0.9666926860809326,
+        0.12008485943078995,
+        0.8982353210449219,
+        0.9706418514251709
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       17.0,
+       90.0,
+       34.0,
+       92.0
+      ],
+      "kw": {
+       "color": [
+        0.8111935257911682,
+        0.4497464597225189,
+        0.7893635630607605,
+        0.6315005421638489
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       73.0,
+       116.0,
+       79.0,
+       132.0
+      ],
+      "kw": {
+       "color": [
+        0.9851104617118835,
+        0.6980446577072144,
+        0.12315640598535538,
+        0.5454735159873962
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       166.0,
+       32.0,
+       139.0,
+       31.0
+      ],
+      "kw": {
+       "color": [
+        0.07879307866096497,
+        0.5241671204566956,
+        0.11722967773675919,
+        0.4854975640773773
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       101.0,
+       112.0,
+       104.0,
+       132.0
+      ],
+      "kw": {
+       "color": [
+        0.794683039188385,
+        0.027376782149076462,
+        0.35059213638305664,
+        0.06338115781545639
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       12.0,
+       147.0,
+       8.0,
+       154.0
+      ],
+      "kw": {
+       "color": [
+        0.31833726167678833,
+        0.37549638748168945,
+        0.01466955803334713,
+        0.31796276569366455
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       175.0,
+       39.0,
+       200.0,
+       39.0
+      ],
+      "kw": {
+       "color": [
+        0.674431324005127,
+        0.46386465430259705,
+        0.12248287349939346,
+        0.406523197889328
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       138.0,
+       78.0,
+       165.0,
+       67.0
+      ],
+      "kw": {
+       "color": [
+        0.019299393519759178,
+        0.14430133998394012,
+        0.42854538559913635,
+        0.15938258171081543
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       12.0,
+       54.0,
+       -18.0,
+       66.0
+      ],
+      "kw": {
+       "color": [
+        0.20388473570346832,
+        0.5019853115081787,
+        0.17647698521614075,
+        0.4310847520828247
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       191.0,
+       74.0,
+       178.0,
+       67.0
+      ],
+      "kw": {
+       "color": [
+        0.4634738862514496,
+        0.1599431335926056,
+        0.24358218908309937,
+        0.5721011161804199
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       109.0,
+       60.0,
+       115.0,
+       70.0
+      ],
+      "kw": {
+       "color": [
+        0.6193923950195312,
+        0.9224794507026672,
+        0.6279855966567993,
+        0.5631794929504395
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       107.0,
+       89.0,
+       124.0,
+       61.0
+      ],
+      "kw": {
+       "color": [
+        0.9814960360527039,
+        0.9775913953781128,
+        0.5206752419471741,
+        0.4824923872947693
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       24.0,
+       27.0,
+       10.0,
+       36.0
+      ],
+      "kw": {
+       "color": [
+        0.9437259435653687,
+        0.3597677946090698,
+        0.8224624395370483,
+        0.18681542575359344
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       146.0,
+       41.0,
+       120.0,
+       15.0
+      ],
+      "kw": {
+       "color": [
+        0.1763564497232437,
+        0.2899007797241211,
+        0.5045269131660461,
+        0.3707224428653717
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       154.0,
+       20.0,
+       179.0,
+       2.0
+      ],
+      "kw": {
+       "color": [
+        0.2110702246427536,
+        0.09072183817625046,
+        0.0704280361533165,
+        0.9028387665748596
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       151.0,
+       89.0,
+       161.0,
+       79.0
+      ],
+      "kw": {
+       "color": [
+        0.7929024696350098,
+        0.7884770631790161,
+        0.6343972682952881,
+        0.5665170550346375
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       167.0,
+       114.0,
+       182.0,
+       94.0
+      ],
+      "kw": {
+       "color": [
+        0.4618685245513916,
+        0.6893431544303894,
+        0.4303247034549713,
+        0.8750165700912476
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       136.0,
+       122.0,
+       146.0,
+       144.0
+      ],
+      "kw": {
+       "color": [
+        0.23850232362747192,
+        0.4587557315826416,
+        0.7761096358299255,
+        0.5742824077606201
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       165.0,
+       63.0,
+       177.0,
+       80.0
+      ],
+      "kw": {
+       "color": [
+        0.75444495677948,
+        0.7387670874595642,
+        0.37722206115722656,
+        0.4244651198387146
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       83.0,
+       90.0,
+       57.0,
+       71.0
+      ],
+      "kw": {
+       "color": [
+        0.05834675207734108,
+        0.38531485199928284,
+        0.9454816579818726,
+        0.06966222077608109
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       151.0,
+       118.0,
+       128.0,
+       132.0
+      ],
+      "kw": {
+       "color": [
+        0.9208386540412903,
+        0.8631772994995117,
+        0.7768727540969849,
+        0.16204652190208435
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       125.0,
+       6.0,
+       148.0,
+       -16.0
+      ],
+      "kw": {
+       "color": [
+        0.8435266017913818,
+        0.9773536324501038,
+        0.3261001706123352,
+        0.13898402452468872
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       120.0,
+       128.0,
+       107.0,
+       100.0
+      ],
+      "kw": {
+       "color": [
+        0.1596672236919403,
+        0.2649690806865692,
+        0.25530368089675903,
+        0.07575313746929169
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       26.0,
+       57.0,
+       32.0,
+       27.0
+      ],
+      "kw": {
+       "color": [
+        0.21571829915046692,
+        0.36672380566596985,
+        0.7500095367431641,
+        0.9927594065666199
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       173.0,
+       47.0,
+       185.0,
+       23.0
+      ],
+      "kw": {
+       "color": [
+        0.007582035847008228,
+        0.9128401279449463,
+        0.8957524299621582,
+        0.9781408309936523
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       81.0,
+       63.0,
+       82.0,
+       65.0
+      ],
+      "kw": {
+       "color": [
+        0.502373993396759,
+        0.38384151458740234,
+        0.22058002650737762,
+        0.29267019033432007
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       23.0,
+       10.0,
+       -4.0,
+       -10.0
+      ],
+      "kw": {
+       "color": [
+        0.25470229983329773,
+        0.26319941878318787,
+        0.4224911332130432,
+        0.0671171247959137
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       75.0,
+       18.0,
+       79.0,
+       -1.0
+      ],
+      "kw": {
+       "color": [
+        0.13230422139167786,
+        0.4350542724132538,
+        0.026318803429603577,
+        0.8412095904350281
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       9.0,
+       15.0,
+       7.0,
+       17.0
+      ],
+      "kw": {
+       "color": [
+        0.7155444622039795,
+        0.2492915540933609,
+        0.7694582939147949,
+        0.9741932153701782
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       147.0,
+       5.0,
+       134.0,
+       -23.0
+      ],
+      "kw": {
+       "color": [
+        0.7889833450317383,
+        0.29134348034858704,
+        0.6092852354049683,
+        0.7173489928245544
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       67.0,
+       120.0,
+       63.0,
+       108.0
+      ],
+      "kw": {
+       "color": [
+        0.8441944122314453,
+        0.3996981084346771,
+        0.25880637764930725,
+        0.4012754261493683
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       90.0,
+       112.0,
+       94.0,
+       84.0
+      ],
+      "kw": {
+       "color": [
+        0.043573878705501556,
+        0.8626272082328796,
+        0.67058926820755,
+        0.5323895812034607
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       194.0,
+       91.0,
+       166.0,
+       86.0
+      ],
+      "kw": {
+       "color": [
+        0.5537556409835815,
+        0.9609235525131226,
+        0.03460478037595749,
+        0.9097805619239807
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       0,
+       20
+      ],
+      "text": "chunk",
+      "kw": {
+       "size": 14,
+       "rotation": 30
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       50,
+       45
+      ],
+      "text": "chunk",
+      "kw": {
+       "size": 14,
+       "rotation": 30
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       100,
+       70
+      ],
+      "text": "chunk",
+      "kw": {
+       "size": 14,
+       "rotation": 30
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       150,
+       95
+      ],
+      "text": "chunk",
+      "kw": {
+       "size": 14,
+       "rotation": 30
+      }
+     },
+     {
+      "op": "render"
+     }
+    ]
+   },
+   {
+    "name": "kd1_list",
+    "file": "kerneldraw.kd1_list.npz",
+    "kind": "kd1",
+    "chunk_size": 500,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       76.0,
+       52.0,
+       79.0,
+       29.0
+      ],
+      "kw": {
+       "color": 0.8464937793810348,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       10.0,
+       24.0,
+       5.0,
+       25.0
+      ],
+      "kw": {
+       "color": 0.29632762439890714,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       59.0,
+       83.0,
+       52.0,
+       80.0
+      ],
+      "kw": {
+       "color": 0.26415868556283045,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       118.0,
+       44.0,
+       90.0,
+       41.0
+      ],
+      "kw": {
+       "color": 0.7206002927985675,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       100.0,
+       8.0,
+       113.0,
+       -19.0
+      ],
+      "kw": {
+       "color": 0.7595396920813497,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       142.0,
+       151.0,
+       163.0,
+       129.0
+      ],
+      "kw": {
+       "color": 0.26988409057848345,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       88.0,
+       7.0,
+       117.0,
+       20.0
+      ],
+      "kw": {
+       "color": 0.6137970274277491,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       138.0,
+       72.0,
+       124.0,
+       80.0
+      ],
+      "kw": {
+       "color": 0.8509069894765384,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       64.0,
+       140.0,
+       61.0,
+       123.0
+      ],
+      "kw": {
+       "color": 0.802912750998493,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       70.0,
+       71.0,
+       55.0,
+       51.0
+      ],
+      "kw": {
+       "color": 0.8889239371997317,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       75.0,
+       1.0,
+       88.0,
+       -23.0
+      ],
+      "kw": {
+       "color": 0.6357182912046775,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       198.0,
+       120.0,
+       211.0,
+       146.0
+      ],
+      "kw": {
+       "color": 0.5621241626381281,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       114.0,
+       14.0,
+       94.0,
+       27.0
+      ],
+      "kw": {
+       "color": 0.6999556322089708,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       92.0,
+       83.0,
+       74.0,
+       68.0
+      ],
+      "kw": {
+       "color": 0.7694385141018478,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       62.0,
+       56.0,
+       87.0,
+       35.0
+      ],
+      "kw": {
+       "color": 0.39900393820633273,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       9.0,
+       143.0,
+       14.0,
+       142.0
+      ],
+      "kw": {
+       "color": 0.7940993478216178,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       44.0,
+       108.0,
+       24.0,
+       135.0
+      ],
+      "kw": {
+       "color": 0.49141532729783777,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       157.0,
+       117.0,
+       148.0,
+       139.0
+      ],
+      "kw": {
+       "color": 0.9983789049602318,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       1.0,
+       106.0,
+       -4.0,
+       109.0
+      ],
+      "kw": {
+       "color": 0.40386535083607394,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       8.0,
+       33.0,
+       20.0,
+       21.0
+      ],
+      "kw": {
+       "color": 0.8234019997706838,
+       "width": 2.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       165.0,
+       140.0,
+       166.0,
+       166.0
+      ],
+      "kw": {
+       "color": 0.31679088323429005,
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       7.0,
+       11.0,
+       -2.0,
+       -19.0
+      ],
+      "kw": {
+       "color": 0.5504746823434332,
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       173.0,
+       8.0,
+       157.0,
+       -1.0
+      ],
+      "kw": {
+       "color": 0.26431144958701575,
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       166.0,
+       5.0,
+       153.0,
+       21.0
+      ],
+      "kw": {
+       "color": 0.23757504287946346,
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       155.0,
+       57.0,
+       126.0,
+       67.0
+      ],
+      "kw": {
+       "color": 0.9790627992453758,
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       182.0,
+       75.0,
+       194.0,
+       68.0
+      ],
+      "kw": {
+       "color": 0.9542422674271192,
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       130.0,
+       155.0,
+       101.0,
+       173.0
+      ],
+      "kw": {
+       "color": 0.7261856663051542,
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "rect",
+      "coords": [
+       186.0,
+       120.0,
+       200.0,
+       148.0
+      ],
+      "kw": {
+       "color": 0.7706205325311732,
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       10,
+       100
+      ],
+      "text": "kd1",
+      "kw": {
+       "size": 24,
+       "alpha": "mask"
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       80,
+       100
+      ],
+      "text": "kd1",
+      "kw": {
+       "size": 24,
+       "alpha": "mask"
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       150,
+       100
+      ],
+      "text": "kd1",
+      "kw": {
+       "size": 24,
+       "alpha": "mask"
+      }
+     },
+     {
+      "op": "render"
+     },
+     {
+      "op": "lines",
+      "coords": "coords_1",
+      "style": {
+       "colors": "colors_2",
+       "alpha": 0.5,
+       "widths": "widths_3"
+      }
+     },
+     {
+      "op": "circles",
+      "coords": "coords_4",
+      "style": {
+       "color": 0.9,
+       "alpha": 0.3,
+       "aa_width": 1.0
+      }
+     },
+     {
+      "op": "render"
+     }
+    ]
+   },
+   {
+    "name": "kd3_scene",
+    "file": "kerneldraw.kd3_scene.npz",
+    "kind": "kd3",
+    "chunk_size": 500,
+    "canvas": "canvas0",
+    "output": "output",
+    "ops": [
+     {
+      "op": "lines",
+      "coords": "coords_1",
+      "style": {
+       "colors": "colors_2",
+       "distance": 2.0
+      }
+     },
+     {
+      "op": "rects",
+      "coords": "coords_3",
+      "style": {
+       "colors": "colors_4"
+      }
+     },
+     {
+      "op": "circles",
+      "coords": "coords_5",
+      "style": {
+       "color": [
+        1.0,
+        0.5,
+        0.2
+       ]
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       76.0,
+       132.0,
+       86.0,
+       102.0
+      ],
+      "kw": {
+       "color": [
+        0.1741940882331009,
+        0.15005325291962834,
+        0.8695122945360338
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       37.0,
+       55.0,
+       21.0,
+       46.0
+      ],
+      "kw": {
+       "color": [
+        0.5377939581763109,
+        0.04753111191992043,
+        0.1764850149079299
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       163.0,
+       105.0,
+       167.0,
+       131.0
+      ],
+      "kw": {
+       "color": [
+        0.8151165960739352,
+        0.6260799093662258,
+        0.301624460283171
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       154.0,
+       92.0,
+       129.0,
+       85.0
+      ],
+      "kw": {
+       "color": [
+        0.014511677001724954,
+        0.3707772892286433,
+        0.3239268882590838
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       152.0,
+       73.0,
+       139.0,
+       69.0
+      ],
+      "kw": {
+       "color": [
+        0.2864885402975036,
+        0.9635201025402906,
+        0.8242264972488235
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       47.0,
+       138.0,
+       18.0,
+       154.0
+      ],
+      "kw": {
+       "color": [
+        0.7739506865805529,
+        0.587651201974475,
+        0.8456393585832621
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       172.0,
+       65.0,
+       146.0,
+       85.0
+      ],
+      "kw": {
+       "color": [
+        0.8830329913778814,
+        0.5799362528321756,
+        0.41026796235205665
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "line",
+      "coords": [
+       115.0,
+       152.0,
+       89.0,
+       161.0
+      ],
+      "kw": {
+       "color": [
+        0.27685337677286326,
+        0.5361132756676413,
+        0.20654268135598586
+       ],
+       "width": 1.5
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       10,
+       120
+      ],
+      "text": "kd3",
+      "kw": {
+       "size": 20
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       90,
+       120
+      ],
+      "text": "kd3",
+      "kw": {
+       "size": 20
+      }
+     },
+     {
+      "op": "item",
+      "kind": "draw_string",
+      "xy": [
+       170,
+       120
+      ],
+      "text": "kd3",
+      "kw": {
+       "size": 20
+      }
+     },
+     {
+      "op": "render"
+     }
+    ]
+   }
+  ],
+  "typeset": [
+   {
+    "name": "blocks",
+    "file": "typeset.blocks.npz",
+    "cases": [
+     {
+      "name": "hello",
+      "text": "Hello, yapocis!",
+      "font": "default",
+      "size": 32,
+      "rotation": 0,
+      "bbox": [
+       0,
+       0,
+       31,
+       207
+      ],
+      "block": "hello"
+     },
+     {
+      "name": "bold_small",
+      "text": "Bold 12",
+      "font": "bold",
+      "size": 12,
+      "rotation": 0,
+      "bbox": [
+       0,
+       0,
+       9,
+       43
+      ],
+      "block": "bold_small"
+     },
+     {
+      "name": "italic_rot",
+      "text": "italic 45",
+      "font": "italic",
+      "size": 24,
+      "rotation": 45,
+      "bbox": [
+       0,
+       0,
+       79,
+       72
+      ],
+      "block": "italic_rot"
+     },
+     {
+      "name": "rot_neg",
+      "text": "negative",
+      "font": "default",
+      "size": 20,
+      "rotation": -30,
+      "bbox": [
+       0,
+       0,
+       48,
+       71
+      ],
+      "block": "rot_neg"
+     },
+     {
+      "name": "rot_90",
+      "text": "ninety",
+      "font": "medium",
+      "size": 28,
+      "rotation": 90,
+      "bbox": [
+       0,
+       0,
+       82,
+       26
+      ],
+      "block": "rot_90"
+     },
+     {
+      "name": "rot_180",
+      "text": "flipped",
+      "font": "light",
+      "size": 18,
+      "rotation": 180,
+      "bbox": [
+       0,
+       0,
+       17,
+       57
+      ],
+      "block": "rot_180"
+     },
+     {
+      "name": "rot_270",
+      "text": "two seventy",
+      "font": "default",
+      "size": 16,
+      "rotation": 270,
+      "bbox": [
+       0,
+       0,
+       87,
+       14
+      ],
+      "block": "rot_270"
+     },
+     {
+      "name": "big",
+      "text": "Big",
+      "font": "boldItalic",
+      "size": 72,
+      "rotation": 10,
+      "bbox": [
+       0,
+       0,
+       67,
+       100
+      ],
+      "block": "big"
+     },
+     {
+      "name": "float_size",
+      "text": "float",
+      "font": "default",
+      "size": 21.5,
+      "rotation": 0,
+      "bbox": [
+       0,
+       0,
+       17,
+       47
+      ],
+      "block": "float_size"
+     },
+     {
+      "name": "empty",
+      "text": "",
+      "font": "default",
+      "size": 32,
+      "rotation": 0,
+      "bbox": [
+       0,
+       0,
+       1,
+       1
+      ],
+      "block": "empty"
+     },
+     {
+      "name": "spaces",
+      "text": "a b  c",
+      "font": "default",
+      "size": 24,
+      "rotation": 0,
+      "bbox": [
+       0,
+       0,
+       18,
+       56
+      ],
+      "block": "spaces"
+     },
+     {
+      "name": "unicode",
+      "text": "caf\u00e9 \u00fc\u00f1",
+      "font": "default",
+      "size": 26,
+      "rotation": 15,
+      "bbox": [
+       0,
+       0,
+       40,
+       83
+      ],
+      "block": "unicode"
+     }
+    ],
+    "offsets": [
+     {
+      "angle": 0,
+      "h": 7,
+      "w": 20,
+      "dxdy": [
+       0.0,
+       -4.0
+      ]
+     },
+     {
+      "angle": 0,
+      "h": 8,
+      "w": 21,
+      "dxdy": [
+       0.0,
+       -4.0
+      ]
+     },
+     {
+      "angle": 30,
+      "h": 7,
+      "w": 20,
+      "dxdy": [
+       0.0,
+       -7.0
+      ]
+     },
+     {
+      "angle": 30,
+      "h": 8,
+      "w": 21,
+      "dxdy": [
+       0.0,
+       -8.0
+      ]
+     },
+     {
+      "angle": 90,
+      "h": 7,
+      "w": 20,
+      "dxdy": [
+       -10.0,
+       -7.0
+      ]
+     },
+     {
+      "angle": 90,
+      "h": 8,
+      "w": 21,
+      "dxdy": [
+       -11.0,
+       -8.0
+      ]
+     },
+     {
+      "angle": 120,
+      "h": 7,
+      "w": 20,
+      "dxdy": [
+       -20.0,
+       -7.0
+      ]
+     },
+     {
+      "angle": 120,
+      "h": 8,
+      "w": 21,
+      "dxdy": [
+       -21.0,
+       -8.0
+      ]
+     },
+     {
+      "angle": 180,
+      "h": 7,
+      "w": 20,
+      "dxdy": [
+       -20.0,
+       -4.0
+      ]
+     },
+     {
+      "angle": 180,
+      "h": 8,
+      "w": 21,
+      "dxdy": [
+       -21.0,
+       -4.0
+      ]
+     },
+     {
+      "angle": -180,
+      "h": 7,
+      "w": 20,
+      "dxdy": [
+       -20.0,
+       -4.0
+      ]
+     },
+     {
+      "angle": -180,
+      "h": 8,
+      "w": 21,
+      "dxdy": [
+       -21.0,
+       -4.0
+      ]
+     },
+     {
+      "angle": -45,
+      "h": 7,
+      "w": 20,
+      "dxdy": [
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "angle": -45,
+      "h": 8,
+      "w": 21,
+      "dxdy": [
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "angle": -90,
+      "h": 7,
+      "w": 20,
+      "dxdy": [
+       -10.0,
+       0.0
+      ]
+     },
+     {
+      "angle": -90,
+      "h": 8,
+      "w": 21,
+      "dxdy": [
+       -10.5,
+       0.0
+      ]
+     },
+     {
+      "angle": -135,
+      "h": 7,
+      "w": 20,
+      "dxdy": [
+       -20.0,
+       0.0
+      ]
+     },
+     {
+      "angle": -135,
+      "h": 8,
+      "w": 21,
+      "dxdy": [
+       -21.0,
+       0.0
+      ]
+     }
+    ]
+   }
+  ],
+  "paths": [
+   {
+    "name": "dashed",
+    "file": "paths.dashed.npz",
+    "width": 200,
+    "height": 160,
+    "output": "output",
+    "segments": [
+     {
+      "xyxy": [
+       143.0,
+       146.0,
+       172.0,
+       81.0
+      ],
+      "color": [
+       0.9762437057077041,
+       0.08083602389560218,
+       0.6073558319950296,
+       1.0
+      ],
+      "linewidth": 3.614905822562969,
+      "pattern": [
+       5.0118926750181805,
+       8.415209655886457
+      ],
+      "offset": 0.8726390807201423
+     },
+     {
+      "xyxy": [
+       46.0,
+       86.0,
+       69.0,
+       140.0
+      ],
+      "color": [
+       0.4771535238392063,
+       0.4304962777294131,
+       0.7889467175443294,
+       1.0
+      ],
+      "linewidth": 2.826554850533643,
+      "pattern": [
+       9.873223999448971,
+       4.95780634121943,
+       9.75146295452988,
+       9.432211102123356
+      ],
+      "offset": 0.8884629288099055
+     },
+     {
+      "xyxy": [
+       62.0,
+       110.0,
+       82.0,
+       146.0
+      ],
+      "color": [
+       0.6656574169657534,
+       0.13339575545169313,
+       0.49786759878537445,
+       1.0
+      ],
+      "linewidth": 2.049812199466764,
+      "pattern": [
+       5.948958671648919,
+       6.001809514789967
+      ],
+      "offset": 4.792911430546236
+     },
+     {
+      "xyxy": [
+       43.0,
+       38.0,
+       36.0,
+       83.0
+      ],
+      "color": [
+       0.6411709239650282,
+       0.9391070534240088,
+       0.5820158006470458,
+       1.0
+      ],
+      "linewidth": 1.6509400792659852,
+      "pattern": [
+       4.142667122332708,
+       9.438197562464534,
+       5.933802276899812,
+       7.406406919468207
+      ],
+      "offset": 2.3801945523770094
+     },
+     {
+      "xyxy": [
+       158.0,
+       108.0,
+       39.0,
+       120.0
+      ],
+      "color": [
+       0.19078850525853763,
+       0.4599160127484816,
+       0.3618150599019092,
+       1.0
+      ],
+      "linewidth": 3.652669154895344,
+      "pattern": [
+       3.365838555570199,
+       3.7708132788462976
+      ],
+      "offset": 4.812537056631892
+     },
+     {
+      "xyxy": [
+       11.0,
+       62.0,
+       106.0,
+       115.0
+      ],
+      "color": [
+       0.04196803718127051,
+       0.9150572012401724,
+       0.5371708512141022,
+       1.0
+      ],
+      "linewidth": 2.2883796487682013,
+      "pattern": [
+       8.56214242814355,
+       4.207506060521388,
+       5.008990505432542,
+       4.784349751294644
+      ],
+      "offset": 4.862198338556279
+     }
+    ]
+   },
+   {
+    "name": "filled_square_hole",
+    "file": "paths.filled_square_hole.npz",
+    "width": 200,
+    "height": 160,
+    "output": "output",
+    "polygons": [
+     "poly_0",
+     "poly_1"
+    ],
+    "face": [
+     0.2,
+     0.5,
+     0.9,
+     1.0
+    ],
+    "edge": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "linewidth_px": 2.083333333333333,
+    "linewidth_pt": 1.5
+   },
+   {
+    "name": "star_translucent",
+    "file": "paths.star_translucent.npz",
+    "width": 200,
+    "height": 160,
+    "output": "output",
+    "polygons": [
+     "poly_0"
+    ],
+    "face": [
+     0.9,
+     0.3,
+     0.2,
+     0.5
+    ],
+    "edge": [
+     0.1,
+     0.1,
+     0.4,
+     1.0
+    ],
+    "linewidth_px": 4.166666666666666,
+    "linewidth_pt": 3.0
+   },
+   {
+    "name": "dashed_polyline",
+    "file": "paths.dashed_polyline.npz",
+    "width": 200,
+    "height": 160,
+    "output": "output",
+    "polygons": [
+     "poly_0"
+    ],
+    "face": null,
+    "edge": [
+     0.0,
+     0.6,
+     0.0,
+     1.0
+    ],
+    "linewidth_px": 2.7777777777777777,
+    "linewidth_pt": 2.0,
+    "dashes": [
+     1.3888888888888888,
+     [
+      8.333333333333332,
+      4.166666666666666
+     ]
+    ]
+   },
+   {
+    "name": "zero_width_fill",
+    "file": "paths.zero_width_fill.npz",
+    "width": 200,
+    "height": 160,
+    "output": "output",
+    "polygons": [
+     "poly_0"
+    ],
+    "face": [
+     0.5,
+     0.5,
+     0.5,
+     1.0
+    ],
+    "edge": [
+     1.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "linewidth_px": 0.0,
+    "linewidth_pt": 0.0
+   },
+   {
+    "name": "bezier_edge",
+    "file": "paths.bezier_edge.npz",
+    "width": 200,
+    "height": 160,
+    "output": "output",
+    "polygons": [
+     "poly_0"
+    ],
+    "face": null,
+    "edge": [
+     0.3,
+     0.2,
+     0.8,
+     1.0
+    ],
+    "linewidth_px": 3.4722222222222223,
+    "linewidth_pt": 2.5
+   },
+   {
+    "name": "images",
+    "file": "paths.images.npz",
+    "width": 200,
+    "height": 160,
+    "output": "output",
+    "images": [
+     {
+      "key": "rgba",
+      "x": 30.0,
+      "y": 40.0
+     },
+     {
+      "key": "gray",
+      "x": 120.0,
+      "y": 90.0
+     },
+     {
+      "key": "rgb8",
+      "x": 140.0,
+      "y": 10.0
+     }
+    ]
+   },
+   {
+    "name": "text",
+    "file": "paths.text.npz",
+    "width": 200,
+    "height": 160,
+    "output": "output",
+    "texts": [
+     {
+      "key": "cov0",
+      "x": 20,
+      "y": 60,
+      "angle": 0,
+      "rgba": [
+       0.1,
+       0.2,
+       0.8,
+       0.9
+      ]
+     },
+     {
+      "key": "cov30",
+      "x": 90,
+      "y": 140,
+      "angle": 30,
+      "rgba": [
+       0.1,
+       0.2,
+       0.8,
+       0.9
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}
