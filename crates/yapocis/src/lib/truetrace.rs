@@ -857,11 +857,6 @@ pub enum Curve {
 }
 
 /// `write_svg_regions(...)` as text.
-///
-/// With `Curve::Cubic` the Python code smooths holes but, through a leftover
-/// assignment, writes the outer ring as a polyline; that is reproduced. With
-/// `Curve::None` the Python code raises `UnboundLocalError`; this port writes
-/// polylines for both, which is what it evidently intends.
 #[allow(clippy::too_many_arguments)]
 pub fn svg_regions(
     regions: &[Region],
@@ -904,14 +899,15 @@ pub fn svg_regions(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{w}\" height=\"{h}\" viewBox=\"0 0 {w} {h}\"><g fill=\"{}\" stroke=\"black\" stroke-width=\"{stroke_width:.3}\" fill-rule=\"evenodd\">",
         fill.unwrap_or("none")
     );
+    let ring_path = |r: &Polyline| match curve {
+        Curve::Cubic => cubic_path(r),
+        Curve::None => poly_path(r),
+    };
     for reg in regions {
-        let mut d = poly_path(&reg.outer);
+        let mut d = ring_path(&reg.outer);
         for hole in &reg.holes {
             d.push(' ');
-            d.push_str(&match curve {
-                Curve::Cubic => cubic_path(hole),
-                Curve::None => poly_path(hole),
-            });
+            d.push_str(&ring_path(hole));
         }
         write!(s, "<path d=\"{d}\" />").unwrap();
     }
@@ -958,8 +954,7 @@ fn svg_number(v: f32) -> String {
 /// document, the outlines [`fill_regions`] fills, filled even-odd in `ink` on a `paper`
 /// rectangle (`None`: transparent). [`Curve::Cubic`] writes the real cubics. Coordinates keep
 /// the image's y-down, and the group is moved half a pixel because `fill_polygons` samples
-/// pixel (row, col) at (x=col, y=row). Unlike [`svg_regions`], which reproduces
-/// `write_svg_regions`' outer-ring bug, this writes what it says.
+/// pixel (row, col) at (x=col, y=row).
 pub fn regions_svg(
     regions: &[Region],
     w: usize,
