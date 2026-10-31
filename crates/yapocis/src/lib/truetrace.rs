@@ -938,6 +938,93 @@ pub fn write_svg_regions(
     Ok(())
 }
 
+/// `html.escape`, for a colour written into an attribute.
+fn escape_attr(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#x27;")
+}
+
+/// A coordinate as `regions_svg` writes it: two decimals, trailing zeros and point dropped.
+fn svg_number(v: f32) -> String {
+    let text = format!("{:.2}", v as f64);
+    text.trim_end_matches('0').trim_end_matches('.').to_string()
+}
+
+/// `regions_svg(regions, w, h, curve, tension, ink, paper)`: nested regions as an SVG
+/// document, the outlines [`fill_regions`] fills, filled even-odd in `ink` on a `paper`
+/// rectangle (`None`: transparent). [`Curve::Cubic`] writes the real cubics. Coordinates keep
+/// the image's y-down, and the group is moved half a pixel because `fill_polygons` samples
+/// pixel (row, col) at (x=col, y=row). Unlike [`svg_regions`], which reproduces
+/// `write_svg_regions`' outer-ring bug, this writes what it says.
+pub fn regions_svg(
+    regions: &[Region],
+    w: usize,
+    h: usize,
+    curve: Curve,
+    tension: f32,
+    ink: &str,
+    paper: Option<&str>,
+) -> String {
+    let ring_d = |ring: &Polyline| -> String {
+        let bez = match curve {
+            Curve::Cubic => ring_to_cubic_beziers(&ring.view(), tension),
+            Curve::None => Vec::new(),
+        };
+        let mut d = String::new();
+        if bez.is_empty() {
+            for i in 0..ring.nrows().saturating_sub(1) {
+                let op = if i == 0 { 'M' } else { 'L' };
+                let (x, y) = (svg_number(ring[[i, 0]]), svg_number(ring[[i, 1]]));
+                write!(d, "{op}{x} {y}").unwrap();
+            }
+        } else {
+            let start = bez[0][0];
+            write!(d, "M{} {}", svg_number(start[0]), svg_number(start[1])).unwrap();
+            for b in &bez {
+                write!(
+                    d,
+                    "C{} {} {} {} {} {}",
+                    svg_number(b[1][0]),
+                    svg_number(b[1][1]),
+                    svg_number(b[2][0]),
+                    svg_number(b[2][1]),
+                    svg_number(b[3][0]),
+                    svg_number(b[3][1])
+                )
+                .unwrap();
+            }
+        }
+        d.push('Z');
+        d
+    };
+    let mut out = vec![format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">"#
+    )];
+    if let Some(paper) = paper {
+        out.push(format!(
+            r#"<rect width="{w}" height="{h}" fill="{}"/>"#,
+            escape_attr(paper)
+        ));
+    }
+    out.push(format!(
+        r#"<g fill="{}" fill-rule="evenodd" transform="translate(0.5 0.5)">"#,
+        escape_attr(ink)
+    ));
+    for region in regions {
+        let mut d = ring_d(&region.outer);
+        for hole in &region.holes {
+            d.push_str(&ring_d(hole));
+        }
+        out.push(format!(r#"<path d="{d}"/>"#));
+    }
+    out.push("</g></svg>\n".to_string());
+    out.join("\n")
+}
+
 /// `trace_bitmap(mask_u8, simplify_tol_px=0.75, min_area_px2=4.0, chain_tol_px=0.0)`:
 /// closed rings from a binary mask, entirely on the CPU.
 pub fn trace_bitmap(
@@ -1155,17 +1242,16 @@ impl Default for TraceParams {
     }
 }
 
-/// `trace_mask(mask, ...)`: a binary mask (nonzero = ink) traced into smooth
-/// filled shapes, as a raster of 1.0 (paper) and 0.0 (ink): the signed distance
-/// field (GPU jump flood or CPU EDT) traced at `iso`, chained, simplified,
-/// closed and filtered by area, nested, and filled by [`fill_regions`].
-pub fn trace_mask(
+/// `trace_regions(mask, ...)`: a binary mask (nonzero = ink) traced into nested regions, the
+/// outlines [`trace_mask`] fills: the signed distance field (GPU jump flood or CPU EDT) traced
+/// at `iso`, chained, simplified, closed and filtered by area, and nested. `params`' curve,
+/// tension and segments only matter to the fill.
+pub fn trace_regions(
     device: &Device,
     mask: &ArrayView2<'_, u8>,
     params: &TraceParams,
-) -> Result<Array2<f32>> {
+) -> Result<Vec<Region>> {
     let mask: Array2<u8> = mask.mapv(|v| (v != 0) as u8);
-    let (h, w) = mask.dim();
     let segs = match params.engine.as_str() {
         "gpu" => {
             TrueTrace::load(device)?
@@ -1190,10 +1276,20 @@ pub fn trace_mask(
         .map(|p| douglas_peucker(&p.view(), params.simplify_tol_px))
         .collect();
     let rings = close_and_filter_polylines(&simp, 1.0, params.min_area_px2);
-    let regions = build_regions_with_holes(&rings);
+    Ok(build_regions_with_holes(&rings))
+}
+
+/// `trace_mask(mask, ...)`: a binary mask (nonzero = ink) traced into smooth filled shapes, as
+/// a raster of 1.0 (paper) and 0.0 (ink): [`trace_regions`], filled by [`fill_regions`].
+pub fn trace_mask(
+    device: &Device,
+    mask: &ArrayView2<'_, u8>,
+    params: &TraceParams,
+) -> Result<Array2<f32>> {
+    let regions = trace_regions(device, mask, params)?;
     fill_regions(
         &regions,
-        (h, w),
+        mask.dim(),
         &params.curve,
         params.tension,
         params.segments,

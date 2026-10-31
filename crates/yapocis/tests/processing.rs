@@ -491,17 +491,23 @@ fn fft_analysis_matches_python() {
         );
         let want_f = read_array::<f64>(&mut z, "spec_batch_freqs");
         assert_eq!(freqs.into_dyn(), want_f, "{backend:?} spec_batch_freqs");
-        // The batch FFT path (ten or more windows of at most 256 samples) is not
-        // reproducible in Python either: on Metal one run in a few differs by
-        // ~100 dB in some bins and on Apple's OpenCL every run differs
-        // (claude-debug/fft_spectrogram_repro_check.py), so only its shape is
-        // checked. The sequential path below is compared numerically.
+        // The batch FFT path (ten or more windows of at most 256 samples) varied from run to
+        // run until the butterfly race was fixed (Yapocis3 80884c3), and the OpenCL and CUDA
+        // fixtures here were recorded before that, so only their shape can be checked. The
+        // Metal fixture is from after it, and 40 repeat runs in Python were identical.
         let want_spec = f32s(&mut z, "spec_batch");
         assert_eq!(
             spec.shape(),
             want_spec.shape(),
             "{backend:?} spec_batch shape"
         );
+        if matches!(backend, Backend::Metal) {
+            check(
+                &format!("{backend:?} spec_batch"),
+                &spec.into_dyn(),
+                &want_spec,
+            );
+        }
 
         let (times, freqs, spec) = fft
             .spectrogram(
@@ -635,6 +641,38 @@ fn truetrace_fill_matches_python() {
             // 1 px strokes traced inside the ink (the chaining fix of 2026-10-21)
             let thin = read_array::<u8>(&mut z, "thin_mask");
             let thin: Array2<u8> = thin.into_dimensionality().unwrap();
+            // Their outlines as SVG, byte for byte. Fixtures recorded before regions_svg have
+            // no such entry.
+            if let Some(svgs) = case.get("regions_svg") {
+                let dir = parity_lib_dir(backend);
+                let text = |key: &str| {
+                    std::fs::read_to_string(dir.join(svgs[key].as_str().unwrap())).unwrap()
+                };
+                for engine in ["gpu", "cpu"] {
+                    let params = truetrace::TraceParams {
+                        iso: 0.75,
+                        engine: engine.to_string(),
+                        ..Default::default()
+                    };
+                    let thin_regions =
+                        truetrace::trace_regions(&device, &thin.view(), &params).unwrap();
+                    for (name, curve) in [("none", Curve::None), ("cubic", Curve::Cubic)] {
+                        let got = truetrace::regions_svg(
+                            &thin_regions,
+                            64,
+                            48,
+                            curve,
+                            0.0,
+                            "#000000",
+                            Some("#ffffff"),
+                        );
+                        assert_eq!(got, text(&format!("{engine}_{name}")), "{engine} {name}");
+                    }
+                }
+                let styled =
+                    truetrace::regions_svg(&regions, 80, 64, Curve::Cubic, 0.5, "#1a2b3c", None);
+                assert_eq!(styled, text("styled"), "styled");
+            }
             for engine in ["gpu", "cpu"] {
                 for iso in [0.75f32, 1.0] {
                     let params = truetrace::TraceParams {

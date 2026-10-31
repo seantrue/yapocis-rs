@@ -17,6 +17,24 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-10-30 — Bundle from Yapocis3 `ea57832`, Metal fixtures re-recorded, `trace_regions` and `regions_svg` (Claude Opus 5.5)
+
+The maintainer asked "What is missing for parity between yapocis-rs and yapocis3?", then "Go for 1-3" from the answer's list.
+
+**What the AI did.**
+
+- **Bundle.** Only `metal/truetrace.metal` changed (Yapocis3 `7d25604`, the lambda became an inline function), with its hash and `SOURCE`. A fresh export shows no drift.
+- **Metal fixtures.** Re-recorded on the M4 MacBook. Every kernel fixture and all but one library data fixture came out unchanged. New: `regions_svg` text fixtures and `models.resnet50` and `models.vgg16`.
+- **Port.** `trace_regions` is split out of `trace_mask`, and `regions_svg` writes the outlines as SVG, ported byte for byte. `truetrace.rs` +105/−9, `tests/processing.rs` +43/−5, kernel +11/−5.
+
+**A gap closed.** `spec_batch` in `fft.analysis` was the one data fixture that changed: up to 36.8 on 0.82% of elements. The test only checked its shape, because the batch path used to vary between runs. Forty runs in Python were now identical on Metal and on OpenCL, and Rust matches the new fixture, so the Metal check is numeric. The old fixture most likely came from before the butterfly race fix; that's an inference, not something reproduced.
+
+**Defects.** Writing the port through a shell heredoc stripped its string escapes. The compiler caught that before any test ran. `svg_regions` still reproduces `write_svg_regions`' outer-ring bug on purpose.
+
+**Tests.** With `yapocis/metal,yapocis/ocl`: 95 passed, 0 failed; clippy and `cargo fmt --check` clean. ImpCraft's `impcraft-local` tests, exact suite included, pass against this tree. `YAPOCIS_PARITY_EXACT=1` fails `coherence` and `custom_weights_match_cpu_and_bundled_variant` with last-bit differences, identically on `543e0c4` without this work, so those failures aren't from here and aren't fixed.
+
+**Not done.** The OpenCL and CUDA fixtures are still from `2909778`, without `regions_svg` cases and with the shape-only FFT check.
+
 ### 2026-10-26 — Parity fixtures for CPU OpenCL (PoCL 7.2), recorded on the Windows VM (Claude Opus 5.5)
 
 **What the maintainer asked for.** Eight tests failed on the Windows VM because no fixtures existed for its only OpenCL device, PoCL on the CPU. The maintainer: "You may be able to record PoCL fixtures on yellowfin", then "Go ahead and record the fixtures after the build".
