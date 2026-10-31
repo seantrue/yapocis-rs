@@ -635,7 +635,103 @@
     ]
    }
   ],
-  "models": [],
+  "models": [
+   {
+    "name": "resnet50",
+    "model": "resnet50",
+    "file": "models.resnet50.npz",
+    "image": "golden_retriever.jpg",
+    "top1": 207
+   },
+   {
+    "name": "vgg16",
+    "model": "vgg16",
+    "file": "models.vgg16.npz",
+    "image": "golden_retriever.jpg",
+    "top1": 207
+   }
+  ],
+  "truetrace": [
+   {
+    "name": "gpu_iso0.0",
+    "file": "truetrace.gpu_iso0.0.npz",
+    "iso": 0.0,
+    "size": [
+     48,
+     40
+    ],
+    "lib_matches_per_pixel": true
+   },
+   {
+    "name": "gpu_iso1.5",
+    "file": "truetrace.gpu_iso1.5.npz",
+    "iso": 1.5,
+    "size": [
+     48,
+     40
+    ],
+    "lib_matches_per_pixel": true
+   },
+   {
+    "name": "cpu",
+    "file": "truetrace.cpu.npz",
+    "n_polys": 2,
+    "n_simp": 2,
+    "n_rings": 2,
+    "regions": [
+     {
+      "outer": 14,
+      "holes": [
+       14
+      ]
+     }
+    ],
+    "svg_regions": "truetrace.regions.svg",
+    "svg_segments": "truetrace.segments.svg"
+   },
+   {
+    "name": "lemon_0",
+    "file": "truetrace.lemon_0.npz",
+    "invert": false,
+    "otsu": 175.0,
+    "image": "lemon.jpg"
+   },
+   {
+    "name": "lemon_1",
+    "file": "truetrace.lemon_1.npz",
+    "invert": true,
+    "otsu": 175.0,
+    "image": "lemon.jpg"
+   },
+   {
+    "name": "lemon_thr",
+    "file": "truetrace.lemon_thr.npz",
+    "threshold": 0.4,
+    "image": "lemon.jpg"
+   },
+   {
+    "name": "fill",
+    "file": "truetrace.fill.npz",
+    "regions": 2,
+    "traced": [
+     "thin_cpu_iso0.75",
+     "thin_cpu_iso1.0",
+     "thin_gpu_iso0.75",
+     "thin_gpu_iso1.0",
+     "trace_cpu_iso-1.0",
+     "trace_cpu_iso0.0",
+     "trace_gpu_iso-1.0",
+     "trace_gpu_iso0.0"
+    ],
+    "regions_svg": {
+     "gpu_none": "truetrace.fill.gpu_none.svg",
+     "gpu_cubic": "truetrace.fill.gpu_cubic.svg",
+     "cpu_none": "truetrace.fill.cpu_none.svg",
+     "cpu_cubic": "truetrace.fill.cpu_cubic.svg",
+     "styled": "truetrace.fill.styled.svg"
+    }
+   }
+  ],
   "imageops": [
    {
     "name": "all",
@@ -5119,80 +5215,6 @@
        0.9
       ]
      }
-    ]
-   }
-  ],
-  "truetrace": [
-   {
-    "name": "gpu_iso0.0",
-    "file": "truetrace.gpu_iso0.0.npz",
-    "iso": 0.0,
-    "size": [
-     48,
-     40
-    ],
-    "lib_matches_per_pixel": true
-   },
-   {
-    "name": "gpu_iso1.5",
-    "file": "truetrace.gpu_iso1.5.npz",
-    "iso": 1.5,
-    "size": [
-     48,
-     40
-    ],
-    "lib_matches_per_pixel": true
-   },
-   {
-    "name": "cpu",
-    "file": "truetrace.cpu.npz",
-    "n_polys": 2,
-    "n_simp": 2,
-    "n_rings": 2,
-    "regions": [
-     {
-      "outer": 14,
-      "holes": [
-       14
-      ]
-     }
-    ],
-    "svg_regions": "truetrace.regions.svg",
-    "svg_segments": "truetrace.segments.svg"
-   },
-   {
-    "name": "lemon_0",
-    "file": "truetrace.lemon_0.npz",
-    "invert": false,
-    "otsu": 175.0,
-    "image": "lemon.jpg"
-   },
-   {
-    "name": "lemon_1",
-    "file": "truetrace.lemon_1.npz",
-    "invert": true,
-    "otsu": 175.0,
-    "image": "lemon.jpg"
-   },
-   {
-    "name": "lemon_thr",
-    "file": "truetrace.lemon_thr.npz",
-    "threshold": 0.4,
-    "image": "lemon.jpg"
-   },
-   {
-    "name": "fill",
-    "file": "truetrace.fill.npz",
-    "regions": 2,
-    "traced": [
-     "thin_cpu_iso0.75",
-     "thin_cpu_iso1.0",
-     "thin_gpu_iso0.75",
-     "thin_gpu_iso1.0",
-     "trace_cpu_iso-1.0",
-     "trace_cpu_iso0.0",
-     "trace_gpu_iso-1.0",
-     "trace_gpu_iso0.0"
     ]
    }
   ]

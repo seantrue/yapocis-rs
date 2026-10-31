@@ -16811,7 +16811,7 @@
         },
         "metal": {
           "path": "metal/truetrace.metal",
-          "sha256": "1090ae8564a1e735a6b8c70c72b049b71cbaf372e2e083d8a9319cb31a602a6d",
+          "sha256": "08a7ddbacffeecb908473b1ddbe2756b834372f4bf6538413c666b28d0beb6e4",
           "build_options": []
         },
         "cuda": {
