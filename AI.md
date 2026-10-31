@@ -17,6 +17,22 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-10-30 — `extent_freetype`, and fixtures re-recorded on Apple OpenCL and the RTX 3080 (Claude Opus 5.5)
+
+The maintainer: "port extent_freetype; restart the python fleet; update the fixtures, you can use yellowfin for the 3080."
+
+**What the AI did.**
+
+- `typeset::extent_freetype`, sharing its box calculation with `render_freetype`. `typeset.rs` +33/−10.
+- Fixtures re-recorded for Metal and OpenCL on the M4 Max, and for CUDA and OpenCL on the RTX 3080 on yellowfin, in a temporary directory there, with the render workers left running.
+- Extents replayed in `tests/graphics.rs` (+12), and `spec_batch` compared numerically on every backend but PoCL (`tests/processing.rs` +4/−4).
+
+**What the re-recording showed.** Existing fixtures held up: on the RTX 3080's CUDA set, everything but the index matched. RTX OpenCL's truetrace set was stale from the initial import, and Apple OpenCL's `spec_batch` predated the race fix. The HSI plane kernels `rgb2hsi` and `hsi2rgb` now have real fixtures on all four devices, which they never had; the generator was fixed in Yapocis3 #71.
+
+**Tests.** With `yapocis/metal,yapocis/ocl` on the M4 Max: 95 passed, 0 failed. With `yapocis/ocl,yapocis/cuda` on the RTX 3080: 95 passed, 0 failed, with 97 kernel cases matched on each backend, checked so the run couldn't pass by looping over no devices. Clippy and `cargo fmt --check` clean on the M4 Max.
+
+**Not done.** The PoCL fixtures (`ocl/cpu`) are from the Windows VM and weren't re-recorded. `coherence` and `custom_weights_match_cpu_and_bundled_variant` still fail under `YAPOCIS_PARITY_EXACT=1`.
+
 ### 2026-10-30 — `svg_regions` no longer reproduces the outer-ring bug (Claude Opus 5.5)
 
 The maintainer: "fix the svg bug". Yapocis3's `write_svg_regions` wrote outer rings as polygons with `curve="cubic"`, and the port reproduced that deliberately. Both are fixed together, and `truetrace.regions.svg` is regenerated for all five device folders; it comes from CPU code, so it's one file. The RTX 3080 OpenCL copy had been stale since the initial import, predating the nesting fix, unnoticed because that test reads only the first backend a host offers.

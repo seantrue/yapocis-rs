@@ -645,6 +645,18 @@ fn typeset_parity() {
                 .map(|v| v.as_u64().unwrap() as usize)
                 .collect();
             assert_eq!(got.bbox.to_vec(), bbox, "{name}: bbox");
+            // Fixtures recorded before extent_freetype have no extent.
+            if let Some(want) = case["extent"].as_array() {
+                let (x0, y0, x1, y1) = typeset::extent_freetype(
+                    case["text"].as_str().unwrap(),
+                    case["font"].as_str().unwrap(),
+                    case["size"].as_f64(),
+                    case["rotation"].as_f64().unwrap(),
+                )
+                .unwrap();
+                let want: Vec<i64> = want.iter().map(|v| v.as_i64().unwrap()).collect();
+                assert_eq!(vec![x0, y0, x1, y1], want, "{name}: extent");
+            }
             assert_eq!(got.block.shape(), want.shape(), "{name}: block shape");
             let g: Vec<f32> = got.block.iter().cloned().collect();
             common::allclose_f32(
