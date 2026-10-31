@@ -17,6 +17,12 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-10-30 — `svg_regions` no longer reproduces the outer-ring bug (Claude Opus 5.5)
+
+The maintainer: "fix the svg bug". Yapocis3's `write_svg_regions` wrote outer rings as polygons with `curve="cubic"`, and the port reproduced that deliberately. Both are fixed together, and `truetrace.regions.svg` is regenerated for all five device folders; it comes from CPU code, so it's one file. The RTX 3080 OpenCL copy had been stale since the initial import, predating the nesting fix, unnoticed because that test reads only the first backend a host offers.
+
+`truetrace.rs` +7/−12. With `yapocis/metal,yapocis/ocl`: 95 passed, 0 failed; clippy clean.
+
 ### 2026-10-30 — Bundle from Yapocis3 `ea57832`, Metal fixtures re-recorded, `trace_regions` and `regions_svg` (Claude Opus 5.5)
 
 The maintainer asked "What is missing for parity between yapocis-rs and yapocis3?", then "Go for 1-3" from the answer's list.
