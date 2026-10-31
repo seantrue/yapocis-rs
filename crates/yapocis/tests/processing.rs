@@ -492,16 +492,16 @@ fn fft_analysis_matches_python() {
         let want_f = read_array::<f64>(&mut z, "spec_batch_freqs");
         assert_eq!(freqs.into_dyn(), want_f, "{backend:?} spec_batch_freqs");
         // The batch FFT path (ten or more windows of at most 256 samples) varied from run to
-        // run until the butterfly race was fixed (Yapocis3 80884c3), and the OpenCL and CUDA
-        // fixtures here were recorded before that, so only their shape can be checked. The
-        // Metal fixture is from after it, and 40 repeat runs in Python were identical.
+        // run until the butterfly race was fixed (Yapocis3 80884c3). Every fixture but PoCL's
+        // is from after that, and 40 repeat runs in Python were identical on Metal and Apple
+        // OpenCL. PoCL's was recorded before it, so only its shape can be checked.
         let want_spec = f32s(&mut z, "spec_batch");
         assert_eq!(
             spec.shape(),
             want_spec.shape(),
             "{backend:?} spec_batch shape"
         );
-        if matches!(backend, Backend::Metal) {
+        if !device.name().to_lowercase().contains("cpu") {
             check(
                 &format!("{backend:?} spec_batch"),
                 &spec.into_dyn(),

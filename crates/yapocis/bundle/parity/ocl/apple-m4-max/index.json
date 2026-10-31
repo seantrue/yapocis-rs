@@ -1160,6 +1160,50 @@
   },
   {
    "interface": "hsi",
+   "kernel": "rgb2hsi",
+   "file": "hsi.rgb2hsi.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "array": "in_1"
+    },
+    {
+     "array": "in_2"
+    }
+   ],
+   "outputs": [
+    "out_0",
+    "out_1",
+    "out_2"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "hsi",
+   "kernel": "hsi2rgb",
+   "file": "hsi.hsi2rgb.npz",
+   "args": [
+    {
+     "array": "in_0"
+    },
+    {
+     "array": "in_1"
+    },
+    {
+     "array": "in_2"
+    }
+   ],
+   "outputs": [
+    "out_0",
+    "out_1",
+    "out_2"
+   ],
+   "global_size": null
+  },
+  {
+   "interface": "hsi",
    "kernel": "rgb2hsi3",
    "file": "hsi.rgb2hsi3.npz",
    "args": [

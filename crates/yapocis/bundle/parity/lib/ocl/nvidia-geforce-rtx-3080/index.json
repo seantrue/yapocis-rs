@@ -670,7 +670,7 @@
      48,
      40
     ],
-    "lib_matches_per_pixel": false
+    "lib_matches_per_pixel": true
    },
    {
     "name": "cpu",
@@ -679,10 +679,6 @@
     "n_simp": 2,
     "n_rings": 2,
     "regions": [
-     {
-      "outer": 14,
-      "holes": []
-     },
      {
       "outer": 14,
       "holes": [
@@ -712,6 +708,28 @@
     "file": "truetrace.lemon_thr.npz",
     "threshold": 0.4,
     "image": "lemon.jpg"
+   },
+   {
+    "name": "fill",
+    "file": "truetrace.fill.npz",
+    "regions": 2,
+    "traced": [
+     "thin_cpu_iso0.75",
+     "thin_cpu_iso1.0",
+     "thin_gpu_iso0.75",
+     "thin_gpu_iso1.0",
+     "trace_cpu_iso-1.0",
+     "trace_cpu_iso0.0",
+     "trace_gpu_iso-1.0",
+     "trace_gpu_iso0.0"
+    ],
+    "regions_svg": {
+     "gpu_none": "truetrace.fill.gpu_none.svg",
+     "gpu_cubic": "truetrace.fill.gpu_cubic.svg",
+     "cpu_none": "truetrace.fill.cpu_none.svg",
+     "cpu_cubic": "truetrace.fill.cpu_cubic.svg",
+     "styled": "truetrace.fill.styled.svg"
+    }
    }
   ],
   "imageops": [
@@ -4565,6 +4583,12 @@
        31,
        207
       ],
+      "extent": [
+       0,
+       -6,
+       208,
+       25
+      ],
       "block": "hello"
      },
      {
@@ -4578,6 +4602,12 @@
        0,
        9,
        43
+      ],
+      "extent": [
+       0,
+       0,
+       43,
+       9
       ],
       "block": "bold_small"
      },
@@ -4593,6 +4623,12 @@
        79,
        72
       ],
+      "extent": [
+       -9,
+       0,
+       63,
+       79
+      ],
       "block": "italic_rot"
      },
      {
@@ -4606,6 +4642,12 @@
        0,
        48,
        71
+      ],
+      "extent": [
+       0,
+       -39,
+       71,
+       9
       ],
       "block": "rot_neg"
      },
@@ -4621,6 +4663,12 @@
        82,
        26
       ],
+      "extent": [
+       -21,
+       0,
+       5,
+       83
+      ],
       "block": "rot_90"
      },
      {
@@ -4634,6 +4682,12 @@
        0,
        17,
        57
+      ],
+      "extent": [
+       -57,
+       -14,
+       0,
+       3
       ],
       "block": "rot_180"
      },
@@ -4649,6 +4703,12 @@
        87,
        14
       ],
+      "extent": [
+       -3,
+       -87,
+       11,
+       0
+      ],
       "block": "rot_270"
      },
      {
@@ -4662,6 +4722,12 @@
        0,
        67,
        100
+      ],
+      "extent": [
+       0,
+       0,
+       104,
+       67
       ],
       "block": "big"
      },
@@ -4677,6 +4743,12 @@
        17,
        47
       ],
+      "extent": [
+       0,
+       0,
+       47,
+       17
+      ],
       "block": "float_size"
      },
      {
@@ -4690,6 +4762,12 @@
        0,
        1,
        1
+      ],
+      "extent": [
+       0,
+       0,
+       0,
+       0
       ],
       "block": "empty"
      },
@@ -4705,6 +4783,12 @@
        18,
        56
       ],
+      "extent": [
+       0,
+       0,
+       56,
+       18
+      ],
       "block": "spaces"
      },
      {
@@ -4718,6 +4802,12 @@
        0,
        40,
        83
+      ],
+      "extent": [
+       -1,
+       0,
+       82,
+       40
       ],
       "block": "unicode"
      }

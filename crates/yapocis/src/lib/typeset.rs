@@ -129,19 +129,28 @@ fn layout(face: &freetype::Face, text: &str, size: f64, angle_deg: f64) -> Resul
     Ok(out)
 }
 
-/// `render_freetype`: the uncropped coverage image, bottom row first (the
-/// Python function builds it with y up, callers flip it).
-fn render_freetype(
-    face: &freetype::Face,
+/// `extent_freetype(text, font_name, size, angle)`: the box `(xmin, ymin, xmax, ymax)` text
+/// covers, y up, with the pen starting at the origin. `size` `None` is 32. Python's kerning
+/// cache isn't ported: it stores entries under the wrong key, which only matters for a font with
+/// kerning, and none of the bundled fonts has any.
+pub fn extent_freetype(
     text: &str,
-    size: f64,
-    angle_deg: f64,
-) -> Result<Array2<u8>> {
-    let angle_deg = round4(angle_deg);
-    let glyphs = layout(face, text, size, angle_deg)?;
+    font_name: &str,
+    size: Option<f64>,
+    angle: f64,
+) -> Result<(i64, i64, i64, i64)> {
+    let size = size.unwrap_or(32.0);
+    let angle = round4(compute_360_to_180(angle));
+    let face = face_for(font_name)?;
+    let glyphs = layout(&face, text, size, angle)?;
+    Ok(extent(&glyphs))
+}
+
+/// The box `glyphs` cover, as `(xmin, ymin, xmax, ymax)`.
+fn extent(glyphs: &[GlyphInfo]) -> (i64, i64, i64, i64) {
     let (mut xmin, mut xmax, mut ymin, mut ymax) = (0i64, 0i64, 0i64, 0i64);
     let (mut pen_x, mut pen_y) = (0i64, 0i64);
-    for g in &glyphs {
+    for g in glyphs {
         pen_x += g.kerning_x;
         let x0 = (pen_x >> 6) + g.left;
         let x1 = x0 + g.width;
@@ -154,6 +163,20 @@ fn render_freetype(
         pen_x += g.advance_x;
         pen_y += g.advance_y;
     }
+    (xmin, ymin, xmax, ymax)
+}
+
+/// `render_freetype`: the uncropped coverage image, bottom row first (the
+/// Python function builds it with y up, callers flip it).
+fn render_freetype(
+    face: &freetype::Face,
+    text: &str,
+    size: f64,
+    angle_deg: f64,
+) -> Result<Array2<u8>> {
+    let angle_deg = round4(angle_deg);
+    let glyphs = layout(face, text, size, angle_deg)?;
+    let (xmin, ymin, xmax, ymax) = extent(&glyphs);
     let (height, width) = ((ymax - ymin) as usize, (xmax - xmin) as usize);
     let mut l = Array2::<u8>::zeros((height, width));
     let (mut pen_x, mut pen_y) = (0i64, 0i64);
