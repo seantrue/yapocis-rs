@@ -17,6 +17,10 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-02 — `npexact` ready for crates.io (Claude Opus 5.5)
+
+The maintainer: "Publish npexact". PlumCraft's array engine depends on it, and crates.io refuses git dependencies. The AI removed `publish = false`, added the licence to the crate, and excluded `fixtures` (22 MB, over the 10 MB limit) and the tests that replay them, which stay in this repository. All 16 of the crate's tests passed here first, and a dry run built the crate from its packaged form.
+
 ### 2026-10-30 — `extent_freetype`, and fixtures re-recorded on Apple OpenCL and the RTX 3080 (Claude Opus 5.5)
 
 The maintainer: "port extent_freetype; restart the python fleet; update the fixtures, you can use yellowfin for the 3080."
