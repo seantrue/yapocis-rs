@@ -28,6 +28,45 @@ fn rint_magic_f32(x: f32) -> f32 {
     (x + magic) - magic
 }
 
+/// How numpy's build rounds float32 `sin`/`cos`'s quadrant, `x * 2/π` to the
+/// nearest integer through `+ 0x1.8p23 - 0x1.8p23`. The source writes a multiply
+/// then an add; whether they stay separate is the compiler's choice:
+///
+/// * `Separate`: clang, which builds the macOS arm64 wheels, keeps the two
+///   roundings (`-ffp-contract=on` stops at statement boundaries).
+/// * `Fused`: GCC, which builds the manylinux x86-64 wheels, contracts them into
+///   one fused multiply-add (`-ffp-contract=fast`, and the AVX2 target has FMA).
+///
+/// They differ only where `x * 2/π` lies within an ulp of a half-integer, that is
+/// near an odd multiple of π/4: 470 of the 355,342 recorded lanes. Proven by
+/// fixtures from an Apple M4 Max (`Separate`) and a Xeon E5-2698 v4 (`Fused`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Quadrant {
+    Separate,
+    Fused,
+}
+
+impl Quadrant {
+    /// The rounding of numpy's wheels for the architecture this code was built
+    /// for: `Fused` on x86-64, `Separate` elsewhere. A numpy built some other way
+    /// (another compiler or flags) may differ; its host fixtures will say.
+    pub const fn host_default() -> Quadrant {
+        if cfg!(target_arch = "x86_64") {
+            Quadrant::Fused
+        } else {
+            Quadrant::Separate
+        }
+    }
+
+    /// The rounding for a machine named as Python's `platform.machine()` does.
+    pub fn for_machine(machine: &str) -> Quadrant {
+        match machine.to_ascii_lowercase().as_str() {
+            "x86_64" | "amd64" => Quadrant::Fused,
+            _ => Quadrant::Separate,
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum TrigOp {
     Sin,
@@ -35,7 +74,7 @@ enum TrigOp {
 }
 
 /// numpy's `simd_sincos_f32` for one lane.
-fn sincos_f32(x_in: f32, op: TrigOp) -> f32 {
+fn sincos_f32(x_in: f32, op: TrigOp, rounding: Quadrant) -> f32 {
     // numpy's hex-float constants, as bit patterns (checked against
     // numpy.float32(float.fromhex(...)))
     let two_over_pi = f32::from_bits(0x3f22_f983); // 0x1.45f306p-1f
@@ -59,7 +98,13 @@ fn sincos_f32(x_in: f32, op: TrigOp) -> f32 {
         };
     }
     let x = x_in;
-    let quadrant = rint_magic_f32(x * two_over_pi);
+    let quadrant = match rounding {
+        Quadrant::Separate => rint_magic_f32(x * two_over_pi),
+        Quadrant::Fused => {
+            let magic = f32::from_bits(0x4b40_0000); // 0x1.800000p+23f
+            x.mul_add(two_over_pi, magic) - magic
+        }
+    };
     let mut reduced = quadrant.mul_add(codyw_pio2_high, x);
     reduced = quadrant.mul_add(codyw_pio2_med, reduced);
     reduced = quadrant.mul_add(codyw_pio2_low, reduced);
@@ -130,14 +175,26 @@ pub fn cabs_f32(re: f32, im: f32) -> f32 {
     ratio.mul_add(ratio, 1.0).sqrt() * larger
 }
 
-/// `np.sin` on a float32 array, one element.
+/// `np.sin` on a float32 array, one element, with this architecture's
+/// [`Quadrant::host_default`].
 pub fn sin_f32(x: f32) -> f32 {
-    sincos_f32(x, TrigOp::Sin)
+    sincos_f32(x, TrigOp::Sin, Quadrant::host_default())
 }
 
-/// `np.cos` on a float32 array, one element.
+/// `np.cos` on a float32 array, one element, with this architecture's
+/// [`Quadrant::host_default`].
 pub fn cos_f32(x: f32) -> f32 {
-    sincos_f32(x, TrigOp::Cos)
+    sincos_f32(x, TrigOp::Cos, Quadrant::host_default())
+}
+
+/// [`sin_f32`] with the quadrant rounded as `rounding` says.
+pub fn sin_f32_with(rounding: Quadrant, x: f32) -> f32 {
+    sincos_f32(x, TrigOp::Sin, rounding)
+}
+
+/// [`cos_f32`] with the quadrant rounded as `rounding` says.
+pub fn cos_f32_with(rounding: Quadrant, x: f32) -> f32 {
+    sincos_f32(x, TrigOp::Cos, rounding)
 }
 
 /// `np.tanh` on a float32 array, one element (`simd_tanh_f32`).

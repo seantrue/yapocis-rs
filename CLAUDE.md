@@ -9,7 +9,7 @@ Rust runtime for the [yapocis](https://github.com/seantrue/Yapocis3) GPU kernels
 - `crates/yapocis-bundle`: manifest schema, argument derivation, dispatch sizing (no GPU).
 - `crates/yapocis-rt`: devices, buffers, compilation cache, launches, the per-device buffer cache; features `ocl`, `metal`, `cuda`.
 - `crates/yapocis`: generated typed API (`build.rs` calls `yapocis_bundle::codegen` on the manifest), library ports under `lib::*` (each cites the Python file it mirrors), examples.
-- `crates/npexact`: bit-exact numpy host numerics (random, reduce, simd_math), tested against per-host fixtures in `crates/npexact/fixtures/host/<host slug>/`; no GPU.
+- `crates/npexact`: bit-exact numpy host numerics (random, reduce, simd_math, hist, elementwise, extrema, order, fft), tested against per-host fixtures in `crates/npexact/fixtures/host/<host slug>/` (an M4 Max and yellowfin's Xeon; record yellowfin's from a temporary directory with only numpy: `host_fixtures.py` needs nothing else); no GPU.
 
 ## Commands
 
