@@ -17,6 +17,10 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-03 — `npexact` 0.1.1 published (Claude Opus 5.5)
+
+The maintainer: "Publish npexact". The AI gave npexact its own version, 0.1.1, instead of the workspace's 0.1.0, because the changes since the last release are additions plus two bug fixes. `yapocis` depends on the new version, and the crate description now mentions elementwise ops. Before uploading, `cargo test -p npexact --release` passed (24 tests) and a dry run built the crate from its packaged form.
+
 ### 2026-11-03 — `npexact`: PlumCraft's hand-ported numpy behaviours, and x86-64 fixtures (Claude Opus 5.5)
 
 The maintainer asked first to "assess the gap between npexact and all of numpy", then: "Move the hand-ported behaviours into npexact, record fixtures on Linux and test."
