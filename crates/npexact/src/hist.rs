@@ -46,6 +46,15 @@ pub fn linspace_f64(start: f64, stop: f64, num: usize) -> Vec<f64> {
     y
 }
 
+/// `np.linspace(start, stop, num, dtype=np.float32)` with Python-float bounds:
+/// computed in float64 ([`linspace_f64`]), then cast to float32.
+pub fn linspace_f64_as_f32(start: f64, stop: f64, num: usize) -> Vec<f32> {
+    linspace_f64(start, stop, num)
+        .into_iter()
+        .map(|v| v as f32)
+        .collect()
+}
+
 pub fn linspace_f32(start: f32, stop: f32, num: usize) -> Vec<f32> {
     if num == 0 {
         return Vec::new();

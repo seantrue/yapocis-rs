@@ -32,7 +32,7 @@ let smoothed = median.median3x3(&image.view(), 5)?;
 | `yapocis` | Public API: generated interface structs, library ports (`lib::*`), the vendored bundle |
 | `yapocis-rt` | Runtime: devices, buffers, program compilation and cache, launches; features `ocl`, `metal`, `cuda` |
 | `yapocis-bundle` | Manifest schema, argument derivation and dispatch evaluation, and `codegen`, the typed-API generator any crate's `build.rs` can run on a bundle; no GPU dependencies |
-| `npexact` | Bit-exact ports of numpy host numerics: `SeedSequence`/`PCG64`/`Generator` draws, pairwise `sum`/`mean`/`var`/`std`, numpy's own float32 `sin`/`cos` and `tanh`; proven by per-host fixtures (`yapocis-tools bundle --host-fixtures`) compared on bit patterns |
+| `npexact` | Bit-exact ports of numpy host numerics: `SeedSequence`/`PCG64`/`Generator` draws, pairwise `sum`/`mean`/`var`/`std`, numpy's own float32 `sin`/`cos` and `tanh`, `histogram`/`linspace`/`interp`, `minimum`/`maximum`/`clip`/`sign`/`mod`/`nan_to_num`, `min`/`max`/`nanmin`/`nanmax`, `sort`/`searchsorted`/`lexsort`/`quantile`/`median`/`nanpercentile`/`unique`, `fftshift`; proven by per-host fixtures (`yapocis-tools bundle --host-fixtures`) compared on bit patterns, recorded on arm64 (M4 Max) and x86-64 (Xeon E5-2698 v4, AVX2) |
 
 Enable backends with Cargo features: `yapocis = { version = "0.1", features = ["metal"] }`.
 `metal` builds only on macOS; `cuda` loads `libcuda` and `libnvrtc` at runtime and is
@@ -81,6 +81,11 @@ M4 Max, every one that Virtual Impressionist uses; FFT coherence differs).
 recorded by `yapocis-tools bundle --host-fixtures crates/npexact/fixtures/host`
 on each host (numpy's SIMD dispatch, libm and FMA contraction differ by CPU, and
 the index records which applies), and skip with a message on a host without them.
+Where a difference is a policy rather than hardware (`Contraction`, the
+`MinMax` tie between signed zeros, the `Quadrant` rounding of `sin`/`cos`), the
+function takes it as a parameter with a `host_default()`, and the `ops` tests
+replay every recorded host's `elementwise`, `extrema`, `order` and `fft` cases on
+any machine.
 
 ## A second bundle
 

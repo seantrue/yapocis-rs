@@ -130,5 +130,16 @@ fn hist_matches_numpy() {
     assert_eq!(linspace_f32(0.1, 0.9, 257), want.as_slice().unwrap());
     let want = common::read_array::<f32>(&mut npz, "linspace.f32b");
     assert_eq!(linspace_f32(-3.5, 12.25, 65), want.as_slice().unwrap());
+    for (key, start, stop, num) in [
+        ("linspace.py_f32a", -2.0, 1.0, 1000),
+        ("linspace.py_f32b", 0.1, 0.7, 333),
+        ("linspace.py_f32c", -1.5, -1.5, 9),
+    ] {
+        let want = common::read_array::<f32>(&mut npz, key);
+        let got = linspace_f64_as_f32(start, stop, num);
+        if let Some(i) = common::first_bit_diff_f32(&got, want.as_slice().unwrap()) {
+            panic!("{key}: {i}: got {:?}, want {:?}", got[i], want[i]);
+        }
+    }
     println!("{checked} hist checks match numpy");
 }

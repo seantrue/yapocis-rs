@@ -17,6 +17,34 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-03 — `npexact`: PlumCraft's hand-ported numpy behaviours, and x86-64 fixtures (Claude Opus 5.5)
+
+The maintainer asked first to "assess the gap between npexact and all of numpy", then: "Move the hand-ported behaviours into npexact, record fixtures on Linux and test."
+
+**What the AI did.** It moved the numpy behaviours that PlumCraft's array engine had written itself into npexact. Each one is held to fixtures numpy recorded through yapocis3's `host_fixtures.py`.
+
+- `elementwise.rs` (new, ~215 LOC): `maximum`, `minimum`, `clip_min`, `sign`, `mod` and `nan_to_num`.
+- `extrema.rs` (new, ~230 LOC): `max`, `min`, `nanmax`, `nanmin` and int64 `cumsum`.
+- `fft.rs` (new, ~50 LOC): `fftshift_2d` and `ifftshift_2d`.
+- `order.rs` (+185/−9): `sort_f32`, `searchsorted`, `lexsort_f32`, `nanpercentile_linear_f32` and `unique_inverse_i64`.
+- `hist.rs` (+9): `linspace_f64_as_f32`.
+- `simd_math.rs` (+63/−6): `Quadrant`.
+- `tests/ops.rs` (new, ~330 LOC): replays every host's fixtures under that host's policies.
+
+It also recorded a full fixture set on yellowfin (Xeon E5-2698 v4, AVX2, no AVX-512; numpy 2.3.3, as on the Mac), which adds 31 MB.
+
+**Defects in earlier AI-written npexact code, caught by the new fixtures:**
+
+- `quantile_linear_f32` was 1 ulp off on both hosts, for example at `q = 0.9` with 2 or 5 values. With a Python-float `q`, NumPy 2 does the virtual index, gamma and the interpolation in float32, but npexact did them in float64. It now works in float32 throughout.
+- `sin_f32`/`cos_f32` were 1 ulp off in 470 of 355,342 lanes on x86-64. GCC, which builds numpy's Linux wheels, fuses `x * 2/π + magic` into one FMA; clang on macOS doesn't. The fix is `Quadrant::{Separate, Fused}`, defaulting by architecture, and each model matches every lane on its host. The AI found this with Python lane models (`claude-debug/npexact/sincos_x86_*.py` in PlumCraft).
+- `tests/simd_math.rs` assumed numpy's float32 `exp`/`log` are libm calls. That holds only on arm64, so the expectation now follows the architecture.
+
+**A difference between the CPUs, not a bug.** numpy's `maximum`/`minimum` follow IEEE on arm64 (`+0` beats `-0`), while on x86-64 `maxps` gives a tie to the second operand. That makes x86's `max`/`min`/`nanmax`/`nanmin` of an array depend on numpy's AVX2 reduction order. The AI modelled that order in Python (`avx2_reduce_sim.py`), then ported it from `loops_minmax.dispatch.c.src` into `MinMax::X86`. All 2,054 `extrema` checks match on both hosts.
+
+**Not reproduced:** where `np.sort` puts `-0` and `+0` depends on its sort library (Highway or x86-simd-sort). This is documented, and the test ignores zero signs. AVX-512 loops are unproven.
+
+**Tests.** `cargo test -p npexact --release` passes on the Mac and on yellowfin. Both hosts' fixtures for the new sections replay on either machine. Workspace clippy (`ocl`, `metal`, `-D warnings`), fmt and `cargo doc` are clean. Not yet published: the crate's version still comes from the workspace (0.1.0).
+
 ### 2026-11-02 — `npexact` ready for crates.io (Claude Opus 5.5)
 
 The maintainer: "Publish npexact". PlumCraft's array engine depends on it, and crates.io refuses git dependencies. The AI removed `publish = false`, added the licence to the crate, and excluded `fixtures` (22 MB, over the 10 MB limit) and the tests that replay them, which stay in this repository. All 16 of the crate's tests passed here first, and a dry run built the crate from its packaged form.
