@@ -1,12 +1,12 @@
 [package]
 name = "npexact"
-version = "0.1.1"
+version = "0.1.2"
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
 exclude = ["fixtures", "tests"]
-description = "Bit-exact ports of the numpy host numerics that yapocis and Virtual Impressionist depend on: the PCG64 generator, elementwise ops, reductions, sorts, quantiles, numpy's SIMD transcendentals"
+description = "Bit-exact ports of the numpy host numerics that yapocis and Virtual Impressionist depend on: the PCG64 generator, elementwise ops, reductions, sorts, quantiles, numpy's SIMD transcendentals, complex64 multiply"
 
 [dependencies]
 
