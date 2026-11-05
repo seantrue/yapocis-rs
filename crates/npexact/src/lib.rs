@@ -22,15 +22,22 @@
 //! * [`order`]: `sort`, `searchsorted`, `lexsort`, `quantile`, `median`,
 //!   `nanpercentile`, `unique` with its inverse.
 //! * [`fft`]: `fftshift` and `ifftshift` of a 2-D plane.
+//! * [`complex`]: complex64 multiply, as numpy's ufunc loop and its scalar path
+//!   compute it.
 //!
 //! Where numpy's result depends on how it was built or which CPU runs it, the
 //! difference is a policy with a `host_default()`: [`random::Contraction`] (FMA
 //! in the generator's arithmetic), [`elementwise::MinMax`] (how `maximum` and
 //! `minimum` break a tie between `-0` and `+0`, and the AVX2 reduction order)
 //! and [`simd_math::Quadrant`] (whether `sin`/`cos` round their quadrant through
-//! a fused multiply-add). Fixtures from an Apple M4 Max and an x86-64 Xeon with
+//! a fused multiply-add). These are decided by architecture when the code is built,
+//! which fits numpy's compiled C. [`complex::Mul`] is the exception: numpy's
+//! SIMD ufunc loops are picked when numpy runs, so `Mul::array_default()` asks the CPU
+//! (fused on arm64, and on x86-64 with FMA3 and AVX2), while `Mul::scalar_default()`
+//! follows the build as the others do. Fixtures from an Apple M4 Max and an x86-64 Xeon with
 //! AVX2 prove both settings of each; an AVX-512 host is not covered.
 
+pub mod complex;
 pub mod elementwise;
 pub mod extrema;
 pub mod fft;

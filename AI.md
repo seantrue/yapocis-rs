@@ -17,6 +17,28 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-05 — `npexact::complex`: numpy's complex64 multiply, fused where numpy's loop fuses (Claude Opus 5.5)
+
+**What the maintainer asked:** they put `fix approved` on #10 and said "fix approved bugs". #10 was filed from PlumCraft, whose Mandelbrot kernel borrowed `random::Contraction::host_default()` for a complex multiply and so got x86-64 wrong.
+
+**What the AI did:** it measured first, then ported.
+
+- **The measurement:** a probe (PlumCraft's `claude-debug/complex64_mul_model_probe.py`, numpy 2.3.3 on both machines) matched numpy's products against five candidate models.
+  - **Arrays:** on the M4 Max and on yellowfin's Xeon (FMA3, AVX2), every product of a contiguous array of every length, a strided view and an array times a scalar is `re = fma(ar, br, -[ai*bi])`, `im = fma(ar, bi, [ai*br])`, the bracketed product rounded first.
+  - **Scalars:** numpy scalars go through compiled C and are fused on the Mac but plain on the Xeon. So the issue's ask, a runtime rule, was half the answer.
+- **`src/complex.rs` (~138 lines):** `Mul { Plain, Fused }`.
+  - `array_default()` decides at run time: fused on aarch64, and on x86-64 when `is_x86_feature_detected!` finds `fma` and `avx2`.
+  - `scalar_default()` decides at build time, as the other policies do.
+  - `array_for(machine, fma3_and_avx2)` and `scalar_for(machine)` serve replay, and `mul_c64` and `multiply_c64` are the arithmetic.
+  - The crate docs name `Mul` as the one policy that asks the CPU.
+- **Fixtures:** a new `complex` case for both hosts, recorded with Yapocis3's new section (branch `complex64-fixtures`). Only `complex.npz` and its index entry were added, since everything else was kept as committed.
+- **`tests/complex.rs` (~163 lines):** it replays both hosts anywhere, under each host's rules. That's 52,651 products per host, bit for bit with any NaN matching any NaN, specials included. It also asserts that the other rule misses numpy on each host, so the fixtures really tell the rules apart.
+- **Checked:** npexact's whole suite passes, clippy is clean on arm64 and for `x86_64-apple-darwin`, and fmt passes.
+
+**Not covered, and said so in the docs:** x86-64 without AVX2 (assumed plain), and AVX-512 hosts (assumed fused). The issue's second ask, to check which other ported loops depend on numpy's runtime dispatch, wasn't done. `MinMax` and `Quadrant` are still decided at build time, which the two hosts' fixtures prove for those two CPUs only.
+
+**Defect in AI-written work:** the first unit test meant to show the rules differ used (1+ε)² − (1−ε)², which is 4ε under both. It was caught before commit by working the arithmetic, and replaced with a deterministic search.
+
 ### 2026-11-03 — `npexact` 0.1.1 published (Claude Opus 5.5)
 
 The maintainer: "Publish npexact". The AI gave npexact its own version, 0.1.1, instead of the workspace's 0.1.0, because the changes since the last release are additions plus two bug fixes. `yapocis` depends on the new version, and the crate description now mentions elementwise ops. Before uploading, `cargo test -p npexact --release` passed (24 tests) and a dry run built the crate from its packaged form.
