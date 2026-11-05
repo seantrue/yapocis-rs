@@ -21,7 +21,7 @@ cuda = ["yapocis-rt/cuda"]
 
 [dependencies]
 yapocis-rt = { path = "../yapocis-rt", version = "0.1.0" }
-npexact = { path = "../npexact", version = "0.1.1" }
+npexact = { path = "../npexact", version = "0.1.2" }
 yapocis-bundle = { path = "../yapocis-bundle", version = "0.1.0" }
 ndarray.workspace = true
 bytemuck.workspace = true

@@ -17,6 +17,10 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-05 — `npexact` 0.1.2 published (Claude Opus 5.5)
+
+The maintainer: "release npexact 0.1.2". It is an addition, `npexact::complex` (#11), so a patch version, as the maintainer named it. `yapocis` depends on 0.1.2, and the crate description now mentions the complex64 multiply. Before uploading, `cargo test -p npexact --release` passed (27 tests) and `cargo publish --dry-run` built the crate from its packaged form. Tagged `npexact-v0.1.2`, the first tag for an npexact release (0.1.1 had none). PlumCraft can then call `Mul::array_default()` instead of its own copy.
+
 ### 2026-11-05 — `npexact::complex`: numpy's complex64 multiply, fused where numpy's loop fuses (Claude Opus 5.5)
 
 **What the maintainer asked:** they put `fix approved` on #10 and said "fix approved bugs". #10 was filed from PlumCraft, whose Mandelbrot kernel borrowed `random::Contraction::host_default()` for a complex multiply and so got x86-64 wrong.
