@@ -16547,7 +16547,7 @@
         },
         "cuda": {
           "path": "cuda/simplex.cu",
-          "sha256": "2ed41d10142a4d95f54dc25df8b5bd883213760fa2d268f173c013ea750a4b1a",
+          "sha256": "7bd8b8e72c653240b32627fbb6b63071767d0170a3a5bfe1e7eb07abbd3c53a9",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",

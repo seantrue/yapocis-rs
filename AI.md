@@ -17,6 +17,17 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-07 — CUDA simplex from Yapocis3 7e98bb0; the RTX 3080's re-recorded fixtures (Claude Opus 5.5)
+
+- **The kernel:** `bundle/cuda/simplex.cu` is regenerated from Yapocis3 `7e98bb0` (its #76). CUDA's `simplex2d` now takes its coordinates as OpenCL and Metal do; before, its field was theirs transposed (the maintainer: "Make cuda noise match").
+- **The fixtures, recorded on yellowfin's RTX 3080:**
+  - the CUDA library fixture `simplex.all`;
+  - the CUDA and OpenCL Mandelbrot fixtures, left over from the first-escape change (they were on yellowfin's clone, uncommitted).
+
+**Verified:** `cargo test --release` on yellowfin (CUDA, OpenCL: 109 passed) and on the M4 MacBook (Metal, OpenCL: 109 passed).
+
+**Still to do:** the Windows VM's CPU OpenCL Mandelbrot fixture still needs re-recording there.
+
 ### 2026-11-07 — `npexact::order::quantile_linear_f32_f64q` (Claude Opus 5.5)
 
 Moving impressionist-rs from yapocis-rs `1fbf919` to `783f2da` moved 26 of PlumImpress's 157 exactness digests, all of them style renders. The cause was 0.1.1's `quantile_linear_f32` (the PlumCraft ports, 49e357d). It now computes the virtual index and gamma in float32, as NumPy 2 does for a Python-float `q`. Virtual Impressionist's digests were recorded with the float64 index the function used before.
