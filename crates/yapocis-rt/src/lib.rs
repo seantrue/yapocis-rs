@@ -23,7 +23,7 @@ pub mod raw;
 
 #[cfg(feature = "cuda")]
 pub mod cuda;
-#[cfg(all(feature = "metal", target_os = "macos"))]
+#[cfg(all(feature = "metal", any(target_os = "macos", target_os = "ios")))]
 pub mod metal;
 #[cfg(feature = "ocl")]
 pub mod ocl;
