@@ -15183,7 +15183,7 @@
       "sources": {
         "ocl": {
           "path": "ocl/imageops.cl",
-          "sha256": "4e4e32052ab4ea78ff69eeed1b9a828f9a9457ca06c0330c4e38b9068e1ed411",
+          "sha256": "56e8eee1e30112743864205e17b1521a0f92e527adf3979365226838f6235deb",
           "build_options": [
             "-w",
             "-cl-fast-relaxed-math",
@@ -15194,12 +15194,12 @@
         },
         "metal": {
           "path": "metal/imageops.metal",
-          "sha256": "5dfc5a4763da7951a3a1d5289cddcdca2f25e3270c0be21069844c50e85101e8",
+          "sha256": "88b75417c6109616d807cf32018081ca666c0ec4a4f7ea822411eba6b24cacfe",
           "build_options": []
         },
         "cuda": {
           "path": "cuda/imageops.cu",
-          "sha256": "ab326df36cd1818f4b6fca1616952a0647c50c023d994dd0173a1a2b22245fe9",
+          "sha256": "f85ac890222d19490286bc973476314562d8d5881133b160facbceebf3191078",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",
@@ -15268,7 +15268,7 @@
       "sources": {
         "ocl": {
           "path": "ocl/mandelbrot.cl",
-          "sha256": "6b9bdbbaf86aae144fbd8b81308701ebf2793d792c946b87ec51ee293e0de526",
+          "sha256": "555919f55b79b5a6c29e2028f5e019bc10f4c2148eb7f4ab7f0aa02bdffd711d",
           "build_options": [
             "-w",
             "-cl-fast-relaxed-math",
@@ -15279,12 +15279,12 @@
         },
         "metal": {
           "path": "metal/mandelbrot.metal",
-          "sha256": "ced18085cbf0c9d8a736b85e23143227d6f9c0b9305a3dc37e98ebe11eaf8e41",
+          "sha256": "775ada257e629754196e80a117223f426d2e21455b5ae48f31ecbf73860ccd1f",
           "build_options": []
         },
         "cuda": {
           "path": "cuda/mandelbrot.cu",
-          "sha256": "1c91aa6905ee086ad4a579e126c69d3e479235e2eb5649c73db721b783b78ddd",
+          "sha256": "3d7eba5d087a3e79a5a621cb1d492375ababb8c6a896ec38484cc1c4e404782d",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",

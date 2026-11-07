@@ -33,12 +33,14 @@ sha2.workspace = true
 freetype-rs = { version = "0.38", optional = true, features = ["bundled"] }
 earcutr = "0.5"
 ndarray-npy.workspace = true
+npzfile.workspace = true
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 
 [build-dependencies]
 yapocis-bundle = { path = "../yapocis-bundle", version = "0.1.0" }
 
 [dev-dependencies]
+npzfile.workspace = true
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 ndarray-npy.workspace = true
 approx.workspace = true

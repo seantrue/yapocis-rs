@@ -17,7 +17,9 @@ objc2-metal = "0.3.2"
 block2 = "0.6.2"
 cudarc = { version = "0.19.10", default-features = false }
 ndarray = "0.17.2"
-ndarray-npy = { version = "0.10.0", features = ["npz", "num-complex-0_4"] }
+ndarray-npy = { version = "0.10.0", default-features = false, features = ["num-complex-0_4"] }
+# .npz archives: ndarray-npy's `npz` feature pins zip 6, which has open advisories
+npzfile = { path = "crates/npzfile" }
 bytemuck = "1"
 num-complex = { version = "0.4", features = ["bytemuck"] }
 half = { version = "2", features = ["bytemuck"] }

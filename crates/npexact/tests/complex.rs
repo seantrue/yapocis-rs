@@ -7,7 +7,7 @@ use std::fs::File;
 
 mod common;
 
-type Npz = ndarray_npy::NpzReader<File>;
+type Npz = npzfile::NpzReader<File>;
 
 struct Case {
     host: String,

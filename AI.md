@@ -17,6 +17,28 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-07 — `npexact::order::quantile_linear_f32_f64q` (Claude Opus 5.5)
+
+Moving impressionist-rs from yapocis-rs `1fbf919` to `783f2da` moved 26 of PlumImpress's 157 exactness digests, all of them style renders. The cause was 0.1.1's `quantile_linear_f32` (the PlumCraft ports, 49e357d). It now computes the virtual index and gamma in float32, as NumPy 2 does for a Python-float `q`. Virtual Impressionist's digests were recorded with the float64 index the function used before.
+
+- **The fix:** both behaviours are kept. `quantile_linear_f32` stays NumPy 2's, which PlumCraft relies on through crates.io. The new `quantile_linear_f32_f64q` is the earlier float64 one, which impressionist-rs now calls.
+- **The test:** on 39,402 cases it equals the float64 formula bit for bit, and it shows that the two functions do differ.
+- **Confirmed:** with the old body restored locally, PlumImpress's gate passed all 157 workflows, each engine starting on an empty checkpoint store.
+- **How the change slipped through:** the AI's first run against the local checkouts reported 156 of 157. The renderer's checkpoint cache is keyed by a fixed code version, so it served stages computed by the old code. The gate now gives each engine an empty store.
+- **Not published:** this exists only on the git branch, not as a crates.io release. ~60 LOC.
+
+### 2026-11-06 — `npzfile` (zip 9); Histogram and Mandelbrot kernels from Yapocis3 29f8403 (Claude Opus 5.5)
+
+**The zip advisories.** The maintainer asked to "look at the dependabot alerts" on PlumImpress, then to "get started on the zip fix". All four alerts (one critical, two high, one moderate) were against `zip` 6.0.0. It reached PlumImpress only through `ndarray-npy` 0.10's `npz` feature, enabled here and in impressionist-rs, and 0.10 is the newest `ndarray-npy`. The new crate `crates/npzfile` (~190 LOC with its test, `publish = false`) is `ndarray-npy`'s `NpzReader` and `NpzWriter` API on `zip` 9.4 (deflate only), reusing `ndarray-npy`'s `.npy` reading and writing. `yapocis::lib::cnn`, and the tests of `yapocis` and `npexact`, use it. The workspace's `ndarray-npy` no longer turns on `npz`. `Cargo.lock` holds only `zip` 9.4.1. `npexact` itself gained no dependency, since PlumCraft takes it from crates.io.
+
+**The kernels.** These were regenerated from Yapocis3 `29f8403` (`bundle/SOURCE`), whose AI.md has the details. They follow the maintainer's rulings on the array/Impressionist comparison: the histogram bins now span `low..high`, and Mandelbrot stops at the first escape. The Metal and OpenCL Mandelbrot parity fixtures were re-recorded on the M4 MacBook. New test `histogram_bins_span_low_to_high`.
+
+**Verified:** `cargo test --release --features yapocis/ocl,yapocis/metal` and clippy (`-D warnings`) on the M4 MacBook.
+
+**Not verified:** CUDA. Yellowfin's Mandelbrot fixtures (CUDA and OpenCL on the RTX 3080) and the Windows VM's CPU OpenCL fixtures are from the old kernels, so the Mandelbrot parity cases will fail there until they're re-recorded on those machines.
+
+**Defect in AI-written code:** the first version of the new test failed clippy's `manual_repeat_n`, caught by clippy before the commit.
+
 ### 2026-11-05 — `npexact` 0.1.2 published (Claude Opus 5.5)
 
 The maintainer: "release npexact 0.1.2". It is an addition, `npexact::complex` (#11), so a patch version, as the maintainer named it. `yapocis` depends on 0.1.2, and the crate description now mentions the complex64 multiply. Before uploading, `cargo test -p npexact --release` passed (27 tests) and `cargo publish --dry-run` built the crate from its packaged form. Tagged `npexact-v0.1.2`, the first tag for an npexact release (0.1.1 had none). PlumCraft can then call `Mul::array_default()` instead of its own copy.

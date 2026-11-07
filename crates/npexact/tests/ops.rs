@@ -6,7 +6,7 @@ use std::fs::File;
 
 mod common;
 
-type Npz = ndarray_npy::NpzReader<File>;
+type Npz = npzfile::NpzReader<File>;
 type Binary = fn(MinMax, f32, f32) -> f32;
 type Unary = fn(MinMax, f32) -> f32;
 type Reduction = fn(MinMax, &[f32]) -> Option<f32>;

@@ -12,7 +12,7 @@ use crate::rt::{CallArg, CallOptions};
 use crate::{Buffer, Device, Error, Result};
 use image::{DynamicImage, RgbImage};
 use ndarray::{Array1, Array3, ArrayD, ArrayView3, IxDyn};
-use ndarray_npy::NpzReader;
+use npzfile::NpzReader;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 

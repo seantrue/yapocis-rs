@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 use ndarray::{ArrayD, IxDyn};
-use ndarray_npy::NpzReader;
+use npzfile::NpzReader;
 use std::fs::File;
 use std::path::PathBuf;
 

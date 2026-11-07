@@ -45,6 +45,34 @@ pub fn quantile_linear_f32(a: &[f32], q: f64) -> f32 {
     }
 }
 
+/// `np.quantile(a, q)` for float32 `a` with `q` kept in float64: NumPy 1, or NumPy 2 given a
+/// float64 `q` (`np.float64`, an array). The virtual index `(n - 1) * q`, its floor and gamma
+/// are float64, and numpy's `_lerp` runs in float32 with the gamma cast on use. Virtual
+/// Impressionist's digests were recorded this way; [`quantile_linear_f32`] is NumPy 2 with a
+/// Python-float `q`, and the two differ where `(n - 1) * q` rounds differently in float32.
+pub fn quantile_linear_f32_f64q(a: &[f32], q: f64) -> f32 {
+    let n = a.len();
+    assert!(n > 0, "quantile of an empty array");
+    let virtual_index = (n as f64 - 1.0) * q;
+    let (prev, next) = if virtual_index >= n as f64 - 1.0 {
+        (n - 1, n - 1)
+    } else if virtual_index < 0.0 {
+        (0, 0)
+    } else {
+        let p = virtual_index.floor() as usize;
+        (p, p + 1)
+    };
+    let gamma = virtual_index - virtual_index.floor();
+    let lo = kth_f32(a, prev);
+    let hi = kth_f32(a, next);
+    let diff = hi - lo;
+    if gamma >= 0.5 {
+        hi - diff * ((1.0 - gamma) as f32)
+    } else {
+        lo + diff * (gamma as f32)
+    }
+}
+
 /// `np.median(a)` for float32 `a`: the middle value, or the float32 mean of
 /// the two middle ones (`(0 + a) + b` over 2).
 pub fn median_f32(a: &[f32]) -> f32 {
@@ -237,5 +265,46 @@ mod tests {
             (vec![i64::MIN, i64::MAX], vec![1, 0])
         );
         assert!(nanpercentile_linear_f32(&[f32::NAN], &[50.0])[0].is_nan());
+    }
+}
+
+#[cfg(test)]
+mod f64q_tests {
+    use super::*;
+
+    /// Where `(n - 1) * q` rounds differently in float32 and float64, the two quantiles take
+    /// different neighbours or gammas; on exact data they agree.
+    #[test]
+    fn the_float64_q_quantile_differs_only_where_the_index_rounds_differently() {
+        let a: Vec<f32> = (0..11).map(|i| i as f32).collect();
+        assert_eq!(quantile_linear_f32_f64q(&a, 0.25), 2.5);
+        assert_eq!(quantile_linear_f32(&a, 0.25), 2.5);
+        let mut differ = 0;
+        for n in 2..400usize {
+            let a: Vec<f32> = (0..n)
+                .map(|i| ((i * 7919) % 1009) as f32 / 1009.0)
+                .collect();
+            for k in 1..100 {
+                let q = f64::from(k) / 100.0;
+                let (strong, weak) = (quantile_linear_f32_f64q(&a, q), quantile_linear_f32(&a, q));
+                if strong.to_bits() != weak.to_bits() {
+                    differ += 1;
+                }
+                // the float64 index, as the function computes it
+                let vi = (n as f64 - 1.0) * q;
+                let (lo, hi) = (
+                    kth_f32(&a, vi.floor() as usize),
+                    kth_f32(&a, (vi.floor() as usize + 1).min(n - 1)),
+                );
+                let g = vi - vi.floor();
+                let want = if g >= 0.5 {
+                    hi - (hi - lo) * ((1.0 - g) as f32)
+                } else {
+                    lo + (hi - lo) * (g as f32)
+                };
+                assert_eq!(strong.to_bits(), want.to_bits(), "n {n} q {q}");
+            }
+        }
+        assert!(differ > 0, "the two quantiles never differed");
     }
 }
