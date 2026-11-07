@@ -20,7 +20,7 @@ pub struct Device {
 #[allow(clippy::vec_init_then_push)]
 pub fn available_backends() -> Vec<Backend> {
     let mut v = Vec::new();
-    #[cfg(all(feature = "metal", target_os = "macos"))]
+    #[cfg(all(feature = "metal", any(target_os = "macos", target_os = "ios")))]
     v.push(Backend::Metal);
     #[cfg(feature = "cuda")]
     v.push(Backend::Cuda);
@@ -65,7 +65,7 @@ impl Device {
         let raw: Arc<dyn RawDevice> = match backend {
             #[cfg(feature = "ocl")]
             Backend::Ocl => Arc::new(crate::ocl::OclDevice::open(selector)?),
-            #[cfg(all(feature = "metal", target_os = "macos"))]
+            #[cfg(all(feature = "metal", any(target_os = "macos", target_os = "ios")))]
             Backend::Metal => Arc::new(crate::metal::MetalDevice::open(selector)?),
             #[cfg(feature = "cuda")]
             Backend::Cuda => Arc::new(crate::cuda::CudaDevice::open(selector)?),

@@ -17,6 +17,16 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-07 — Metal on iOS (experimental branch `ios-metal`) (Claude Opus 5.5)
+
+The maintainer: "evaluate moving plumimpress to native Mac and iOS on swift", then "Try integrating into ../virtimp_com_app as a local alternative", and on hearing it was Mac-only: "Macos only is useless, almost. Why not iOS?".
+
+`yapocis-rt` built its Metal backend only for `target_os = "macos"`. Four cfgs (`lib.rs`, `device.rs`, `Cargo.toml`) now also take `ios`; `metal.rs` needed no change, because `MTLCopyAllDevices` exists on iOS 18. A research agent found and tried the change on a scratch copy.
+
+**Verified:** the VirtImp app's renderer renders through it on the iPhone simulator's GPU (`metal: Apple iOS simulator GPU`), and on the Mac. A build was installed on the maintainer's iPad Pro (M4) and launched.
+
+**Not run:** this repo's own test suite for iOS targets (no iOS CI); a render on the iPad itself, which is still to be tried.
+
 ### 2026-11-07 — `npexact::order::quantile_linear_f32_f64q` (Claude Opus 5.5)
 
 Moving impressionist-rs from yapocis-rs `1fbf919` to `783f2da` moved 26 of PlumImpress's 157 exactness digests, all of them style renders. The cause was 0.1.1's `quantile_linear_f32` (the PlumCraft ports, 49e357d). It now computes the virtual index and gamma in float32, as NumPy 2 does for a Python-float `q`. Virtual Impressionist's digests were recorded with the float64 index the function used before.
