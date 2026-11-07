@@ -2,7 +2,7 @@
 //! through the Rust runtime on the same backend and compare outputs.
 
 use ndarray::{ArrayD, IxDyn};
-use ndarray_npy::NpzReader;
+use npzfile::NpzReader;
 use serde::Deserialize;
 use std::fs::File;
 use std::path::PathBuf;

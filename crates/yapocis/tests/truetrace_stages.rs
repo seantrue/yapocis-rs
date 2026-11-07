@@ -5,7 +5,7 @@
 //! exactly, so a drift is pinned to the first stage that differs.
 
 use ndarray::{Array1, Array2};
-use ndarray_npy::NpzReader;
+use npzfile::NpzReader;
 use yapocis::lib::truetrace::{
     build_regions_with_holes, chain_segments_to_polylines, close_and_filter_polylines,
     douglas_peucker, fill_regions, Polyline, TrueTrace,

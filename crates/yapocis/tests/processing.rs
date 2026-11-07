@@ -20,11 +20,11 @@ fn cases(backend: Backend, generator: &str) -> Vec<serde_json::Value> {
         .unwrap_or_default()
 }
 
-fn npz(backend: Backend, case: &serde_json::Value) -> ndarray_npy::NpzReader<std::fs::File> {
+fn npz(backend: Backend, case: &serde_json::Value) -> npzfile::NpzReader<std::fs::File> {
     common::open_npz(&parity_lib_dir(backend).join(case["file"].as_str().unwrap()))
 }
 
-fn f32s(npz: &mut ndarray_npy::NpzReader<std::fs::File>, name: &str) -> ArrayD<f32> {
+fn f32s(npz: &mut npzfile::NpzReader<std::fs::File>, name: &str) -> ArrayD<f32> {
     read_array::<f32>(npz, name)
 }
 
@@ -263,6 +263,34 @@ fn truetrace_masks_from_photograph() {
         println!(
             "{name}: {differing} of {} pixels differ between decoders",
             want.len()
+        );
+    }
+}
+
+/// Bins cover `[low, high]`, so `low` is subtracted: with `low != 0` every count used to shift
+/// (yapocis3 `imageops.mako`). Values sit at bin centres, so each bin gets the same count.
+#[test]
+fn histogram_bins_span_low_to_high() {
+    let (low, high, n_bins, per_bin) = (2.0f32, 4.0f32, 8usize, 1000usize);
+    let values: Vec<f32> = (0..n_bins)
+        .flat_map(|b| {
+            std::iter::repeat_n(
+                low + (b as f32 + 0.5) * (high - low) / n_bins as f32,
+                per_bin,
+            )
+        })
+        .collect();
+    let a = Array2::from_shape_vec((n_bins * 10, per_bin / 10), values).unwrap();
+    for device in common::devices() {
+        let ops = Imageops::load(&device).unwrap();
+        let hist = ops
+            .histogram(&a.view().into_dyn(), n_bins, low, high)
+            .unwrap();
+        assert_eq!(
+            hist.to_vec(),
+            vec![per_bin as i32; n_bins],
+            "{:?}",
+            device.backend()
         );
     }
 }
@@ -563,7 +591,7 @@ fn fft_analysis_matches_python() {
         let want_est = read_array::<f64>(&mut z, "estimate_frequency");
         assert_eq!(est, want_est[[]], "{backend:?} estimate_frequency");
 
-        let scalar = |z: &mut ndarray_npy::NpzReader<std::fs::File>, name: &str| -> f64 {
+        let scalar = |z: &mut npzfile::NpzReader<std::fs::File>, name: &str| -> f64 {
             let a = read_array::<f64>(z, name);
             a[[]]
         };

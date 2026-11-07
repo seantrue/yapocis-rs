@@ -262,7 +262,7 @@ fn synthetic_forward_passes_run() {
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("weights.npz");
     {
-        use ndarray_npy::NpzWriter;
+        use npzfile::NpzWriter;
         let mut w = NpzWriter::new(std::fs::File::create(&path).unwrap());
         let mut small = |name: &str, shape: &[usize], scale: f32| {
             let n: usize = shape.iter().product();

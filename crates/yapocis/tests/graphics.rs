@@ -6,7 +6,7 @@ mod common;
 
 use common::{devices, lib_index, mismatch_fraction, open_npz, read_any, Npy};
 use ndarray::{Array2, Array3, ArrayD, Axis, IxDyn};
-use ndarray_npy::NpzReader;
+use npzfile::NpzReader;
 use serde_json::Value;
 use std::fs::File;
 use yapocis::lib::graphics::{BlockAlpha, Graphics1, Graphics4, Style, TextAlpha, TextStyle};
