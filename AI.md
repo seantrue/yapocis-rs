@@ -17,6 +17,37 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-08 — rustcpu: no host copies, views that take their slice once, a parallel histogram (Claude Opus 5.5)
+
+The maintainer asked for a rustcpu performance test on yellowfin, then: "do all three fixes and rerun the affected code on yellowfin". The fixes were the three this ledger's previous entry and `claude-debug/PERF_RUSTCPU_YELLOWFIN.md` proposed.
+
+**What the AI did** (yapocis-rt, ~350 LOC changed):
+- **Argument views:** `cpu/args.rs`'s `Input` and `Output` hold the typed slice they serve, computed once, and the buffer's lock guard. Before, every element access re-checked a byte-to-element cast. The operator and graphics ports take generic closures instead of `fn` pointers.
+- **No host copies:** `RawDevice` gains `runs_on_host()` and `wrap_host()`, both off by default, so every GPU backend is unchanged.
+  - **On the CPU:** for synchronous calls, `Program::call` runs kernels on the caller's arrays in place, and writes each `out_like` result straight into the array it returns.
+  - **The buffer:** `CpuBuffer` became a lock plus a byte pointer: its own aligned storage, or the caller's for one call. The two `unsafe` operations (forming the byte slice under the lock, and `wrap_host` itself) are confined to it, with their safety conditions written down.
+  - **`in` arrays:** wrapped read-only; a kernel that writes an `in` parameter gets a private copy that is discarded, as on a GPU.
+  - **Fallback:** an array that isn't 8-byte aligned is copied as before.
+- **Parallel histogram:** partial histograms per 16K-element chunk, built in parallel by the new `par::map_each`, are added in chunk order. The integer counts are exact.
+- **Test change:** `yapocis-rt`'s buffer-cache test now expects the CPU backend not to use the cache.
+
+**Measured** (`claude-debug/PERF_RUSTCPU_YELLOWFIN.md`):
+- **rustcpu itself, on yellowfin:** 1.86× faster on 80 threads and 1.32× faster on one thread (geometric means).
+- **Against numbax, on yellowfin:** from 1.38× to 2.57× on all threads, and from 0.56× to 0.74× on one.
+- **Largest gains:** the histogram (11.5×), gradient (2.9× on 80 threads), add (5.8× on one thread).
+- **M4 Max, one thread:** `operators.add` went from 2.44 ms to 0.52 ms.
+- **Unchanged:** the compute-bound kernels (gaussian, median3x3, simplex).
+
+**Verified (M4 MacBook):**
+- `cargo test --release -p yapocis --features rustcpu`: 72 passed.
+- The workspace on OpenCL, Metal and rustcpu: all passed, after the buffer-cache test was adjusted.
+- impressionist-rs's yapocis-external against this runtime: 47 passed.
+- Clippy is clean, including the bindings.
+
+**Defects and corrections:**
+- **A deadlock in the first `CpuBuffer::read`:** it blocked on its lock. Where an output was taken before an aliased input, that would have deadlocked instead of panicking with "take inputs before outputs". I noticed it reviewing my own change before it ran, and replaced it with `try_read`.
+- **The buffer-cache test failed** on the CPU backend, because the CPU backend no longer allocates device buffers. That was the intended effect of fix 2; the test was adjusted to assert it.
+
 ### 2026-11-08 — The `rustcpu` backend: every kernel in plain Rust on the CPU, and Python bindings for Yapocis3 (Claude Opus 5.5)
 
 The maintainer: "Start a worktree to provide a CPU only version of all kernels. Emphasize simplicity and readability of the generated code. The object is to provide a fallback for systems … that do not have any GPU (even a software OpenCL) implementation … Attempt parallelism only if it is easy to reason about." Later: "go ahead with rustcpu" (a Yapocis3 backend through Python bindings), and "backend name should be the same -- lets go with rustcpu for both."

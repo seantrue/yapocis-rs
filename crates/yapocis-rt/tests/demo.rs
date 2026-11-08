@@ -194,14 +194,24 @@ fn run_buffer_cache(backend: Backend) {
         assert_eq!(sum(&a, &b), add(&a, &b), "{backend:?} repeated sum");
     }
     let s = device.buffer_cache_stats();
-    // the first call allocates a, b and the output; later calls rebind a and
-    // b and reuse the output buffer
-    assert_eq!(
-        (s.misses, s.bound_hits, s.size_hits),
-        (3, 4, 2),
-        "{backend:?} {s:?}"
-    );
-    assert_eq!(s.entries, 3);
+    if backend == Backend::RustCpu {
+        // The CPU backend runs kernels on the host arrays in place, so it never
+        // takes a device buffer from the cache.
+        assert_eq!(
+            s,
+            yapocis_rt::BufferCacheStats::default(),
+            "{backend:?} {s:?}"
+        );
+    } else {
+        // the first call allocates a, b and the output; later calls rebind a and
+        // b and reuse the output buffer
+        assert_eq!(
+            (s.misses, s.bound_hits, s.size_hits),
+            (3, 4, 2),
+            "{backend:?} {s:?}"
+        );
+        assert_eq!(s.entries, 3);
+    }
 
     // same address, new contents: must be re-uploaded
     for v in a.iter_mut() {

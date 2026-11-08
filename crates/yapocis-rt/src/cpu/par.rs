@@ -31,6 +31,13 @@ pub fn map_chunks<T: Send>(out: &mut [T], n: usize, f: impl Fn(usize, &mut [T]) 
         .for_each(|(k, c)| f(k, c));
 }
 
+/// `out[k] = f(k)` for every `k`, each call its own task: for a few heavy
+/// pieces of work (a partial result per chunk of the input) rather than many
+/// light ones.
+pub fn map_each<T: Send>(out: &mut [T], f: impl Fn(usize) -> T + Sync) {
+    out.par_iter_mut().enumerate().for_each(|(k, o)| *o = f(k));
+}
+
 /// `(a[i], b[i]) = f(i)` for every `i`, in parallel: one work item writing
 /// one element of each of two outputs.
 pub fn map2<A: Send, B: Send>(a: &mut [A], b: &mut [B], f: impl Fn(usize) -> (A, B) + Sync) {

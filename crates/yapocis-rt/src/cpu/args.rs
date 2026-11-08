@@ -12,15 +12,20 @@
 //! }
 //! ```
 //!
+//! An [`Input`] or [`Output`] is a plain slice once taken (`input1[i]` is an
+//! ordinary index, so loops over it optimise as loops over a slice) and holds
+//! the buffer's lock until it is dropped.
+//!
 //! Take inputs before outputs. An input that is also bound to another
 //! argument of the same launch (an in-place call) is copied, so it reads the
 //! values from before the launch, as a GPU kernel with no write-after-read
-//! hazard would.
+//! hazard would. An output on a buffer the kernel may not write (an `in`
+//! argument used in place) is a private copy whose writes are dropped, as a
+//! GPU's write to an `in` parameter's temporary buffer is never read back.
 
 use super::CpuBuffer;
 use crate::raw::RawArg;
 use bytemuck::Pod;
-use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::sync::{RwLockReadGuard, RwLockWriteGuard};
 
@@ -106,19 +111,20 @@ impl<'a> Args<'a> {
     /// A read-only view of buffer argument `i` as `[T]`.
     pub fn input<T: Pod>(&self, i: usize) -> Input<'a, T> {
         let b = self.buffer(i);
-        let n = b.len / std::mem::size_of::<T>();
+        let (guard, bytes) = b
+            .try_read()
+            .unwrap_or_else(|| panic!("argument {i}: take inputs before outputs"));
+        let data: &'a [T] = typed(bytes);
         if self.aliased(i) {
-            let words = b
-                .words
-                .try_read()
-                .unwrap_or_else(|_| panic!("argument {i}: take inputs before outputs"));
-            let data =
-                bytemuck::cast_slice::<u8, T>(&super::bytes(&words, b.len)[..n * size::<T>()])
-                    .to_vec();
-            Input::Copied(data)
+            Input {
+                data: Vec::from(data).into(),
+                _guard: None,
+            }
         } else {
-            let guard = b.words.read().unwrap_or_else(|e| e.into_inner());
-            Input::Shared(guard, n, PhantomData)
+            Input {
+                data: View::Borrowed(data),
+                _guard: Some(guard),
+            }
         }
     }
 
@@ -126,50 +132,99 @@ impl<'a> Args<'a> {
     /// contents (so `inout` parameters read and write through it).
     pub fn output<T: Pod>(&self, i: usize) -> Output<'a, T> {
         let b = self.buffer(i);
-        let n = b.len / std::mem::size_of::<T>();
-        let guard = b
-            .words
+        if !b.writable {
+            let (_guard, bytes) = b
+                .try_read()
+                .unwrap_or_else(|| panic!("argument {i} is bound to a writable argument"));
+            let copy: Vec<T> = typed(bytes).to_vec();
+            return Output {
+                data: copy.into(),
+                _guard: None,
+            };
+        }
+        let (guard, bytes) = b
             .try_write()
-            .unwrap_or_else(|_| panic!("argument {i} is bound to two writable arguments"));
-        Output(guard, n, PhantomData)
-    }
-}
-
-fn size<T>() -> usize {
-    std::mem::size_of::<T>()
-}
-
-/// See [`Args::input`].
-pub enum Input<'a, T> {
-    Shared(RwLockReadGuard<'a, Vec<u64>>, usize, PhantomData<T>),
-    Copied(Vec<T>),
-}
-
-impl<T: Pod> Deref for Input<'_, T> {
-    type Target = [T];
-    fn deref(&self) -> &[T] {
-        match self {
-            Input::Shared(words, n, _) => {
-                bytemuck::cast_slice(&bytemuck::cast_slice::<u64, u8>(words)[..n * size::<T>()])
-            }
-            Input::Copied(v) => v,
+            .unwrap_or_else(|| panic!("argument {i} is bound to two writable arguments"));
+        Output {
+            data: ViewMut::Borrowed(bytemuck::cast_slice_mut(trim_mut::<T>(bytes))),
+            _guard: Some(guard),
         }
     }
 }
 
-/// See [`Args::output`].
-pub struct Output<'a, T>(RwLockWriteGuard<'a, Vec<u64>>, usize, PhantomData<T>);
+/// The whole elements of `bytes` as `[T]` (the buffer is 8-byte aligned).
+fn typed<T: Pod>(bytes: &[u8]) -> &[T] {
+    let n = bytes.len() / std::mem::size_of::<T>();
+    bytemuck::cast_slice(&bytes[..n * std::mem::size_of::<T>()])
+}
 
-impl<T: Pod> Deref for Output<'_, T> {
-    type Target = [T];
-    fn deref(&self) -> &[T] {
-        bytemuck::cast_slice(&bytemuck::cast_slice::<u64, u8>(&self.0)[..self.1 * size::<T>()])
+fn trim_mut<T>(bytes: &mut [u8]) -> &mut [u8] {
+    let n = bytes.len() / std::mem::size_of::<T>();
+    &mut bytes[..n * std::mem::size_of::<T>()]
+}
+
+/// The slice an [`Input`] serves: the buffer's own, or a copy.
+enum View<'a, T> {
+    Borrowed(&'a [T]),
+    Owned(Box<[T]>),
+}
+
+impl<T> From<Vec<T>> for View<'_, T> {
+    fn from(v: Vec<T>) -> Self {
+        View::Owned(v.into_boxed_slice())
     }
 }
 
-impl<T: Pod> DerefMut for Output<'_, T> {
+/// See [`Args::input`].
+pub struct Input<'a, T> {
+    data: View<'a, T>,
+    // Field order: `data` is dropped before the guard it depends on.
+    _guard: Option<RwLockReadGuard<'a, ()>>,
+}
+
+impl<T> Deref for Input<'_, T> {
+    type Target = [T];
+    fn deref(&self) -> &[T] {
+        match &self.data {
+            View::Borrowed(s) => s,
+            View::Owned(b) => b,
+        }
+    }
+}
+
+/// The slice an [`Output`] serves: the buffer's own, or a private copy.
+enum ViewMut<'a, T> {
+    Borrowed(&'a mut [T]),
+    Owned(Box<[T]>),
+}
+
+impl<T> From<Vec<T>> for ViewMut<'_, T> {
+    fn from(v: Vec<T>) -> Self {
+        ViewMut::Owned(v.into_boxed_slice())
+    }
+}
+
+/// See [`Args::output`].
+pub struct Output<'a, T> {
+    data: ViewMut<'a, T>,
+    _guard: Option<RwLockWriteGuard<'a, ()>>,
+}
+
+impl<T> Deref for Output<'_, T> {
+    type Target = [T];
+    fn deref(&self) -> &[T] {
+        match &self.data {
+            ViewMut::Borrowed(s) => s,
+            ViewMut::Owned(b) => b,
+        }
+    }
+}
+
+impl<T> DerefMut for Output<'_, T> {
     fn deref_mut(&mut self) -> &mut [T] {
-        let n = self.1 * size::<T>();
-        bytemuck::cast_slice_mut(&mut bytemuck::cast_slice_mut::<u64, u8>(&mut self.0)[..n])
+        match &mut self.data {
+            ViewMut::Borrowed(s) => s,
+            ViewMut::Owned(b) => b,
+        }
     }
 }

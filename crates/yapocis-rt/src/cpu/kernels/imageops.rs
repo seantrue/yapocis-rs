@@ -63,19 +63,37 @@ fn binarize(a: &Args) {
 /// `histogram(float* input, int size_of_input, float low, float high, int*
 /// hst, int size_of_hst)`: adds each clamped value to one of `size_of_hst`
 /// bins spanning `low..=high` (a value equal to `high` goes in the last bin).
-/// The bins are incremented, not reset. Work items share bins (`atomic_inc`
-/// on the GPU), so they run in order.
+/// The bins are incremented, not reset.
+///
+/// Work items share bins (`atomic_inc` on the GPU). Here each chunk of the
+/// input is counted into its own partial histogram, the chunks in parallel,
+/// and the partials are added into `hst` in chunk order. The counts are
+/// integers, so the result is exactly the GPU's, whatever the order.
 fn histogram(a: &Args) {
     let input = a.input::<f32>(0);
     let (low, high) = (a.float(2), a.float(3));
     let mut hst = a.output::<i32>(4);
-    let n_bins = a.int(5);
-    for &x in &input[..a.global_size()] {
+    let n_bins = a.int(5) as usize;
+    let values = &input[..a.global_size()];
+    let bucket = |x: f32| {
         let value = clamp(x, low, high);
         // (size_t) of the float quotient; `as` truncates toward zero as C does
         // for in-range values (and gives 0 for NaN).
         let bucket = ((n_bins as f32 * (value - low)) / (high - low)) as usize;
-        let bucket = bucket.min(n_bins as usize - 1);
-        hst[bucket] += 1;
+        bucket.min(n_bins - 1)
+    };
+    const CHUNK: usize = 1 << 14;
+    let mut partials = vec![Vec::new(); values.len().div_ceil(CHUNK)];
+    par::map_each(&mut partials, |k| {
+        let mut counts = vec![0i32; n_bins];
+        for &x in &values[k * CHUNK..((k + 1) * CHUNK).min(values.len())] {
+            counts[bucket(x)] += 1;
+        }
+        counts
+    });
+    for counts in &partials {
+        for (bin, count) in hst.iter_mut().zip(counts) {
+            *bin += count;
+        }
     }
 }
