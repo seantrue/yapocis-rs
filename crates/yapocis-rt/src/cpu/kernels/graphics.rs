@@ -261,7 +261,7 @@ fn draw(
     height: usize,
     n: usize,
     colors: &[f32],
-    blend: fn(f32, f32, f32) -> f32,
+    blend: impl Fn(f32, f32, f32) -> f32 + Sync,
     cover: impl Fn(usize, f32, f32) -> Cover + Sync,
 ) {
     par::map_chunks(image, 1, |i, pixel| {
@@ -300,7 +300,7 @@ fn lines(a: &Args) {
 }
 
 /// The kernels that take `(width, height, a, n, coords, aa_widths, colors)`.
-fn shapes(a: &Args, symbol: &str, cover: fn(&[f32], f32, f32, f32) -> Cover) {
+fn shapes(a: &Args, symbol: &str, cover: impl Fn(&[f32], f32, f32, f32) -> Cover + Sync) {
     let height = a.int(1) as usize;
     let n = a.int(3) as usize;
     let coords = a.input::<f32>(4);

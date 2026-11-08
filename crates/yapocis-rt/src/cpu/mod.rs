@@ -31,7 +31,7 @@ use crate::raw::{RawArg, RawBuffer, RawDevice, RawEvent, RawProgram};
 use std::any::Any;
 use std::collections::HashMap;
 use std::panic::{catch_unwind, AssertUnwindSafe};
-use std::sync::RwLock;
+use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use yapocis_bundle::Backend;
 
 pub use args::Args;
@@ -40,19 +40,62 @@ pub use kernels::Kernel;
 /// The device name: what `YAPOCIS_DEVICE` matches and what the parity tests slug.
 pub const DEVICE_NAME: &str = "cpu";
 
-/// A buffer in host memory. The bytes live in `u64` words so any element
-/// type up to 8-byte alignment can be viewed in place.
+/// A buffer in host memory: its own bytes, or (from [`RawDevice::wrap_host`],
+/// for the length of one call) the caller's array, used in place so a call
+/// copies nothing. Either way the bytes start 8-byte aligned, so any element
+/// type up to that alignment can be viewed in place.
 pub struct CpuBuffer {
-    pub(crate) words: RwLock<Vec<u64>>,
+    /// Readers and the one writer of the bytes during a launch. The bytes are
+    /// not inside it because a wrapped buffer's bytes belong to the caller.
+    lock: RwLock<()>,
+    ptr: *mut u8,
     pub(crate) len: usize,
+    /// Whether kernels may write the bytes (false for an `in` argument used in place).
+    pub(crate) writable: bool,
+    /// An owned buffer's storage (empty for a wrapped one); `ptr` points into it.
+    _words: Vec<u64>,
 }
+
+// SAFETY: the bytes are only reached through `lock` (shared for reading,
+// exclusive for writing), and an owned buffer's storage moves with it.
+unsafe impl Send for CpuBuffer {}
+unsafe impl Sync for CpuBuffer {}
 
 impl CpuBuffer {
     fn new(len_bytes: usize) -> CpuBuffer {
+        let mut words = vec![0u64; len_bytes.div_ceil(8)];
         CpuBuffer {
-            words: RwLock::new(vec![0u64; len_bytes.div_ceil(8)]),
+            lock: RwLock::new(()),
+            ptr: words.as_mut_ptr() as *mut u8,
             len: len_bytes,
+            writable: true,
+            _words: words,
         }
+    }
+
+    /// The bytes, for as long as the read guard is held; `None` if a writer
+    /// holds the buffer (a port took an output before an input bound to it).
+    pub(crate) fn try_read(&self) -> Option<(RwLockReadGuard<'_, ()>, &[u8])> {
+        let guard = self.lock.try_read().ok()?;
+        // SAFETY: `ptr` is valid for `len` bytes while the buffer lives (its own
+        // storage, or caller memory kept alive and unwritten for the call, see
+        // `wrap_host`), and the read guard excludes the writer.
+        Some((guard, unsafe {
+            std::slice::from_raw_parts(self.ptr, self.len)
+        }))
+    }
+
+    /// The bytes, writable, for as long as the write guard is held; `None` if
+    /// the guard is already taken (the buffer is bound to two arguments).
+    // `&mut` from `&self` is the point: the write guard returned with it makes
+    // it the only access, as `RwLock::write` does for its own contents.
+    #[allow(clippy::mut_from_ref)]
+    pub(crate) fn try_write(&self) -> Option<(RwLockWriteGuard<'_, ()>, &mut [u8])> {
+        let guard = self.lock.try_write().ok()?;
+        // SAFETY: as in `read`; the write guard makes this the only access.
+        Some((guard, unsafe {
+            std::slice::from_raw_parts_mut(self.ptr, self.len)
+        }))
     }
 }
 
@@ -98,14 +141,6 @@ impl CpuDevice {
     }
 }
 
-fn bytes(words: &[u64], len: usize) -> &[u8] {
-    &bytemuck::cast_slice(words)[..len]
-}
-
-fn bytes_mut(words: &mut [u64], len: usize) -> &mut [u8] {
-    &mut bytemuck::cast_slice_mut(words)[..len]
-}
-
 fn cpu_buffer(b: &dyn RawBuffer) -> Result<&CpuBuffer> {
     b.as_any()
         .downcast_ref::<CpuBuffer>()
@@ -149,17 +184,45 @@ impl RawDevice for CpuDevice {
 
     fn upload(&self, buffer: &dyn RawBuffer, data: &[u8]) -> Result<()> {
         let b = cpu_buffer(buffer)?;
-        let mut words = b.words.write().unwrap_or_else(|e| e.into_inner());
-        bytes_mut(&mut words, b.len)[..data.len()].copy_from_slice(data);
+        let (_guard, bytes) = b
+            .try_write()
+            .ok_or_else(|| Error::backend(Backend::RustCpu, "upload", "buffer in use"))?;
+        bytes[..data.len()].copy_from_slice(data);
         Ok(())
     }
 
     fn download(&self, buffer: &dyn RawBuffer, out: &mut [u8]) -> Result<()> {
         let b = cpu_buffer(buffer)?;
-        let words = b.words.read().unwrap_or_else(|e| e.into_inner());
+        let (_guard, bytes) = b
+            .try_read()
+            .ok_or_else(|| Error::backend(Backend::RustCpu, "download", "buffer in use"))?;
         let n = out.len();
-        out.copy_from_slice(&bytes(&words, b.len)[..n]);
+        out.copy_from_slice(&bytes[..n]);
         Ok(())
+    }
+
+    fn runs_on_host(&self) -> bool {
+        true
+    }
+
+    /// Run kernels on host memory in place (8-byte aligned; anything else is
+    /// copied as on a GPU).
+    unsafe fn wrap_host(
+        &self,
+        ptr: *mut u8,
+        len: usize,
+        writable: bool,
+    ) -> Option<Box<dyn RawBuffer>> {
+        if len == 0 || !(ptr as usize).is_multiple_of(8) {
+            return None;
+        }
+        Some(Box::new(CpuBuffer {
+            lock: RwLock::new(()),
+            ptr,
+            len,
+            writable,
+            _words: Vec::new(),
+        }))
     }
 
     fn launch(

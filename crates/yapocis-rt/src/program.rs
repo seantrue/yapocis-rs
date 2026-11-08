@@ -260,6 +260,33 @@ impl Program {
         BufferAny::alloc(self.device.clone(), shape, dtype)
     }
 
+    /// A buffer over the caller's host memory, used in place, when the device
+    /// runs kernels on host memory (the CPU backend: see
+    /// [`RawDevice::wrap_host`](crate::raw::RawDevice::wrap_host)); `None`
+    /// otherwise, and the caller copies as for a GPU.
+    ///
+    /// # Safety
+    ///
+    /// `ptr` must stay valid for `len` bytes until the returned buffer is
+    /// dropped, and, if `writable`, nothing else may use it until then. `call`
+    /// keeps every such buffer local and drops it before it returns.
+    unsafe fn wrap_host(
+        &self,
+        ptr: *mut u8,
+        len: usize,
+        writable: bool,
+        shape: &[usize],
+        dtype: DType,
+    ) -> Option<BufferAny> {
+        let raw = unsafe { self.device.raw.wrap_host(ptr, len, writable) }?;
+        Some(BufferAny::from_raw(
+            self.device.clone(),
+            std::sync::Arc::from(raw),
+            shape,
+            dtype,
+        ))
+    }
+
     /// Call a kernel the way the Python runtime does: derive dimensions and
     /// `out_like` outputs from the arguments, upload, launch, and (unless
     /// `async_exec`) wait and read the outputs back.
@@ -305,11 +332,19 @@ impl Program {
         // come from the buffer cache for synchronous calls (an async call's
         // buffers may still be in use when it returns) and remember the host
         // array they were bound to.
+        //
+        // On a device that runs kernels on host memory (the CPU backend), a
+        // synchronous call uses the caller's arrays in place instead (`Host`),
+        // and writes each out_like result straight into the array it returns
+        // (`HostOut`): nothing is uploaded, zeroed twice or read back.
         enum Slot {
             Temp(BufferAny, Option<usize>),
             Borrowed(usize),
+            Host(BufferAny),
+            HostOut(BufferAny, HostData),
         }
         let cached = !opts.async_exec;
+        let in_place = !opts.async_exec && self.device.raw.runs_on_host();
         let mut slots: Vec<Option<Slot>> = Vec::with_capacity(derived.len());
         let mut readbacks: Vec<(usize, usize)> = Vec::new(); // (slot index, user arg index)
         let mut out_likes: Vec<(usize, String)> = Vec::new(); // (slot index, param name)
@@ -326,8 +361,22 @@ impl Program {
                 }
                 KernelArg::OutLike { shape, dtype, .. } => {
                     scalar_bytes.push(Vec::new());
-                    let buf = self.temp(shape, *dtype, None, cached)?;
                     out_likes.push((i, ka_param(ka).to_string()));
+                    if in_place {
+                        let mut data = HostData::zeroed(*dtype, shape.iter().product());
+                        let bytes = data.as_bytes_mut();
+                        // SAFETY: `data` is moved into the slot with its wrapper (its
+                        // heap storage does not move) and returned only after the
+                        // wrapper is dropped; nothing else sees it meanwhile.
+                        let wrapped = unsafe {
+                            self.wrap_host(bytes.as_mut_ptr(), bytes.len(), true, shape, *dtype)
+                        };
+                        if let Some(buf) = wrapped {
+                            slots.push(Some(Slot::HostOut(buf, data)));
+                            continue;
+                        }
+                    }
+                    let buf = self.temp(shape, *dtype, None, cached)?;
                     slots.push(Some(Slot::Temp(buf, None)));
                 }
                 KernelArg::Buffer {
@@ -337,7 +386,7 @@ impl Program {
                     param,
                 } => {
                     scalar_bytes.push(Vec::new());
-                    let slot = match &args[*arg] {
+                    let slot = match &mut args[*arg] {
                         CallArg::Buffer(b) => {
                             if !b.device().same_as(&self.device) {
                                 return Err(Error::ForeignBuffer);
@@ -365,19 +414,55 @@ impl Program {
                                         "a mutable host array (CallArg::InOut) or a device buffer",
                                 });
                             }
-                            let host = Some(v.bytes.as_ptr() as usize);
-                            let buf = self.temp(v.shape, *dtype, host, cached)?;
-                            buf.upload_bytes(v.bytes)?;
-                            Slot::Temp(buf, host)
+                            // SAFETY: the caller's array outlives the call; read only.
+                            let wrapped = in_place
+                                .then(|| unsafe {
+                                    self.wrap_host(
+                                        v.bytes.as_ptr() as *mut u8,
+                                        v.bytes.len(),
+                                        false,
+                                        v.shape,
+                                        *dtype,
+                                    )
+                                })
+                                .flatten();
+                            match wrapped {
+                                Some(buf) => Slot::Host(buf),
+                                None => {
+                                    let host = Some(v.bytes.as_ptr() as usize);
+                                    let buf = self.temp(v.shape, *dtype, host, cached)?;
+                                    buf.upload_bytes(v.bytes)?;
+                                    Slot::Temp(buf, host)
+                                }
+                            }
                         }
                         CallArg::InOut(v) => {
-                            let host = Some(v.bytes.as_ptr() as usize);
-                            let buf = self.temp(v.shape, *dtype, host, cached)?;
-                            buf.upload_bytes(v.bytes)?;
-                            if matches!(role, Role::Inout | Role::Out) {
-                                readbacks.push((i, *arg));
+                            let writes = matches!(role, Role::Inout | Role::Out);
+                            // SAFETY: the caller lent this array mutably for the call;
+                            // written in place only for inout/out parameters.
+                            let wrapped = in_place
+                                .then(|| unsafe {
+                                    self.wrap_host(
+                                        v.bytes.as_mut_ptr(),
+                                        v.bytes.len(),
+                                        writes,
+                                        v.shape,
+                                        *dtype,
+                                    )
+                                })
+                                .flatten();
+                            match wrapped {
+                                Some(buf) => Slot::Host(buf),
+                                None => {
+                                    let host = Some(v.bytes.as_ptr() as usize);
+                                    let buf = self.temp(v.shape, *dtype, host, cached)?;
+                                    buf.upload_bytes(v.bytes)?;
+                                    if writes {
+                                        readbacks.push((i, *arg));
+                                    }
+                                    Slot::Temp(buf, host)
+                                }
                             }
-                            Slot::Temp(buf, host)
                         }
                         CallArg::Scalar(_) => {
                             return Err(Error::ArgKind {
@@ -400,7 +485,9 @@ impl Program {
         for (i, slot) in slots.iter().enumerate() {
             match slot {
                 None => raw_args.push(RawArg::Bytes(&scalar_bytes[i])),
-                Some(Slot::Temp(b, _)) => raw_args.push(RawArg::Buffer(b.raw.as_ref())),
+                Some(Slot::Temp(b, _) | Slot::Host(b) | Slot::HostOut(b, _)) => {
+                    raw_args.push(RawArg::Buffer(b.raw.as_ref()))
+                }
                 Some(Slot::Borrowed(a)) => match &args[*a] {
                     CallArg::Buffer(b) => raw_args.push(RawArg::Buffer(b.raw.as_ref())),
                     _ => unreachable!(),
@@ -417,11 +504,29 @@ impl Program {
         if !opts.async_exec {
             event.wait()?;
         }
+        drop(raw_args);
         // Outputs in declaration order: inout/out buffers and out_like results.
         // Positions, not names, because an interface may declare the same
         // out_like source twice (gradient: `out_like input, out_like input`).
         let mut outputs = Vec::new();
         for (i, ka) in derived.iter().enumerate() {
+            if let (KernelArg::OutLike { .. }, Some(Slot::HostOut(..))) = (ka, &slots[i]) {
+                // Written in place: drop the wrapper, return the array.
+                let Some(Slot::HostOut(buf, data)) = slots[i].take() else {
+                    unreachable!()
+                };
+                let (shape, dtype) = (buf.shape().to_vec(), buf.dtype());
+                drop(buf);
+                outputs.push(Output {
+                    param: ka_param(ka).to_string(),
+                    value: OutputValue::Host {
+                        shape,
+                        dtype,
+                        bytes: data,
+                    },
+                });
+                continue;
+            }
             let value = match (ka, &slots[i]) {
                 (KernelArg::OutLike { .. }, Some(Slot::Temp(b, _))) => {
                     if opts.async_exec {
@@ -462,6 +567,13 @@ impl Program {
                     CallArg::Buffer(b) => OutputValue::Device((*b).clone()),
                     _ => OutputValue::Written,
                 },
+                (
+                    KernelArg::Buffer {
+                        role: Role::Inout | Role::Out,
+                        ..
+                    },
+                    Some(Slot::Host(_)),
+                ) => OutputValue::Written,
                 _ => continue,
             };
             outputs.push(Output {
@@ -470,7 +582,6 @@ impl Program {
             });
         }
         let _ = (&readbacks, &out_likes);
-        drop(raw_args);
         if cached {
             for slot in slots.into_iter().flatten() {
                 if let Slot::Temp(b, host) = slot {

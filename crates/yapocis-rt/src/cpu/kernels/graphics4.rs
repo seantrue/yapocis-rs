@@ -70,7 +70,7 @@ fn lines(a: &Args) {
 }
 
 /// The kernels that take `(width, height, a, n, coords, aa_widths, colors)`.
-fn shapes(a: &Args, symbol: &str, cover: fn(&[f32], f32, f32, f32) -> Cover) {
+fn shapes(a: &Args, symbol: &str, cover: impl Fn(&[f32], f32, f32, f32) -> Cover + Sync) {
     let height = a.int(1) as usize;
     let n = a.int(3) as usize;
     let coords = a.input::<f32>(4);

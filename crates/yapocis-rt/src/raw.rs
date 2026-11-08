@@ -47,6 +47,29 @@ pub trait RawDevice: Send + Sync {
         cache_key: &str,
     ) -> Result<Box<dyn RawProgram>>;
     fn alloc(&self, len_bytes: usize) -> Result<Box<dyn RawBuffer>>;
+    /// Whether [`RawDevice::wrap_host`] may return buffers: kernels run on
+    /// host memory (the CPU backend). False for every GPU backend.
+    fn runs_on_host(&self) -> bool {
+        false
+    }
+    /// A buffer over `len` bytes of host memory at `ptr`, used in place by
+    /// backends whose kernels can read host memory (the CPU backend), so a
+    /// call copies nothing; `None` (the default, every GPU backend) means
+    /// upload and download as usual.
+    ///
+    /// # Safety
+    ///
+    /// The memory must stay valid, and nothing else may write it (nor read it,
+    /// if `writable`), until the returned buffer is dropped. With
+    /// `writable == false` the backend never writes it.
+    unsafe fn wrap_host(
+        &self,
+        _ptr: *mut u8,
+        _len: usize,
+        _writable: bool,
+    ) -> Option<Box<dyn RawBuffer>> {
+        None
+    }
     fn upload(&self, buffer: &dyn RawBuffer, data: &[u8]) -> Result<()>;
     fn download(&self, buffer: &dyn RawBuffer, out: &mut [u8]) -> Result<()>;
     /// Enqueue one launch. `global` and `local` are already resolved (1 to 3 axes).
