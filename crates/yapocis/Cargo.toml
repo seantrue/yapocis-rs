@@ -18,6 +18,7 @@ text = ["dep:freetype-rs"]
 ocl = ["yapocis-rt/ocl"]
 metal = ["yapocis-rt/metal"]
 cuda = ["yapocis-rt/cuda"]
+rustcpu = ["yapocis-rt/rustcpu"]
 
 [dependencies]
 yapocis-rt = { path = "../yapocis-rt", version = "0.1.0" }

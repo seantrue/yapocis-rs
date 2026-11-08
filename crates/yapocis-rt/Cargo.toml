@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 publish = false
-description = "Runtime for yapocis kernel bundles: OpenCL, Metal and CUDA devices, buffers, program compilation and launches"
+description = "Runtime for yapocis kernel bundles: OpenCL, Metal, CUDA and CPU devices, buffers, program compilation and launches"
 keywords = ["gpu", "opencl", "metal", "cuda", "image-processing"]
 categories = ["science"]
 
@@ -15,6 +15,8 @@ default = []
 ocl = ["dep:opencl3"]
 metal = ["dep:objc2", "dep:objc2-foundation", "dep:objc2-metal"]
 cuda = ["dep:cudarc"]
+# Rust ports of the OpenCL kernels on the host CPU (no GPU, no OpenCL driver).
+rustcpu = ["dep:rayon"]
 
 [dependencies]
 yapocis-bundle = { path = "../yapocis-bundle", version = "0.1.0" }
@@ -26,6 +28,7 @@ bytemuck.workspace = true
 num-complex.workspace = true
 half.workspace = true
 opencl3 = { workspace = true, optional = true }
+rayon = { workspace = true, optional = true }
 cudarc = { workspace = true, optional = true, features = ["driver", "nvrtc", "dynamic-loading", "cuda-12050"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]

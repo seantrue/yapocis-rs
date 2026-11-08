@@ -10,6 +10,11 @@ pub enum Backend {
     Ocl,
     Metal,
     Cuda,
+    /// Rust ports of the OpenCL kernels, run on the host CPU: a fallback for
+    /// machines with no GPU and no software OpenCL. It reads the OpenCL
+    /// sources (see [`Backend::source_backend`]) and launches like OpenCL.
+    /// Named `rustcpu`, as Yapocis3's Python backend for it is.
+    RustCpu,
 }
 
 impl Backend {
@@ -18,6 +23,17 @@ impl Backend {
             Backend::Ocl => "ocl",
             Backend::Metal => "metal",
             Backend::Cuda => "cuda",
+            Backend::RustCpu => "rustcpu",
+        }
+    }
+
+    /// The backend whose rendered sources and launch rules this one uses: the
+    /// CPU backend's kernels are ports of the OpenCL ones, so it takes the
+    /// OpenCL source (the convolution families read their weights from it).
+    pub fn source_backend(self) -> Backend {
+        match self {
+            Backend::RustCpu => Backend::Ocl,
+            other => other,
         }
     }
 
@@ -26,6 +42,7 @@ impl Backend {
             "ocl" | "opencl" => Backend::Ocl,
             "metal" | "metallic" | "mtl" => Backend::Metal,
             "cuda" => Backend::Cuda,
+            "rustcpu" => Backend::RustCpu,
             _ => return None,
         })
     }
@@ -42,12 +59,12 @@ pub struct Launch {
 
 /// The global size used when the caller gave none and the kernel has no `dispatch_size`.
 ///
-/// * OpenCL and CUDA: the first argument with a `.size` (the first array), flattened.
+/// * OpenCL, CUDA and CPU: the first argument with a `.size` (the first array), flattened.
 /// * Metal: the first array; `(shape[0]*shape[1], 1)` when it is 2-D or more.
 pub fn default_global_size(backend: Backend, args: &[ArgShape]) -> Option<Vec<usize>> {
     let first = args.iter().find_map(|a| a.shape())?;
     Some(match backend {
-        Backend::Ocl | Backend::Cuda => vec![first.iter().product()],
+        Backend::Ocl | Backend::Cuda | Backend::RustCpu => vec![first.iter().product()],
         Backend::Metal => {
             if first.len() > 1 {
                 vec![first[0] * first[1], 1]

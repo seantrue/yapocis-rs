@@ -42,13 +42,33 @@ fn default_device_slug(backend: Backend) -> String {
         .clone()
 }
 
+/// The fixtures the CPU backend is compared with, as `<backend>/<device>`.
+///
+/// Python has no recorder for the Rust CPU backend, and its kernels are ports
+/// of the OpenCL ones, so it replays fixtures recorded on a CPU OpenCL device:
+/// PoCL's (`ocl/cpu`) unless `YAPOCIS_CPU_REFERENCE` names another set.
+pub fn cpu_reference() -> String {
+    std::env::var("YAPOCIS_CPU_REFERENCE")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "ocl/cpu".to_string())
+}
+
+/// `<backend>/<device>` of the fixtures a test on `backend` compares with:
+/// those recorded on the device it opens here (the CPU backend: see
+/// [`cpu_reference`]).
+pub fn fixture_set(backend: Backend) -> String {
+    if backend == Backend::RustCpu {
+        cpu_reference()
+    } else {
+        format!("{}/{}", backend.name(), default_device_slug(backend))
+    }
+}
+
 /// `bundle/parity/lib/<backend>/<device>` for library-level fixtures recorded
 /// on the device `backend` opens here.
 pub fn parity_lib_dir(backend: Backend) -> PathBuf {
-    bundle_dir()
-        .join("parity/lib")
-        .join(backend.name())
-        .join(default_device_slug(backend))
+    bundle_dir().join("parity/lib").join(fixture_set(backend))
 }
 
 /// Every backend compiled in that opens a device on this machine.

@@ -11,12 +11,21 @@ use yapocis::{available_backends, Backend, DType, Device, MANIFEST};
 
 mod common;
 
-/// `bundle/parity/<backend>/<device>`: fixtures recorded on this device.
+/// `bundle/parity/<backend>/<device>`: fixtures recorded on this device (the
+/// CPU backend's reference set: see `common::cpu_reference`).
 fn parity_dir(device: &Device) -> PathBuf {
+    let set = if device.backend() == Backend::RustCpu {
+        common::cpu_reference()
+    } else {
+        format!(
+            "{}/{}",
+            device.backend().name(),
+            common::device_slug(&device.name())
+        )
+    };
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("bundle/parity")
-        .join(device.backend().name())
-        .join(common::device_slug(&device.name()))
+        .join(set)
 }
 
 #[derive(Deserialize)]
@@ -122,6 +131,32 @@ fn allclose(dtype: DType, got: &[u8], want: &[u8], rtol: f64, atol: f64) -> Resu
     }
 }
 
+/// Fixtures known to predate a kernel change, by file and SHA-256, skipped on
+/// the CPU backend until they are re-recorded. Each entry stops matching (and
+/// the case runs again) as soon as its file changes.
+const STALE_CPU_FIXTURES: &[(&str, &str, &str)] = &[(
+    "ocl/cpu/mandelbrot.mandelbrot.npz",
+    "52bcaea8e37a605b147b633598d721ce54ae7459eac3c9f8f6609469c7f43c1b",
+    "recorded on PoCL before mandelbrot stopped at the first escape (783f2da); \
+     to be re-recorded on the Windows VM",
+)];
+
+fn stale(backend: Backend, dir: &std::path::Path, file: &str) -> Option<&'static str> {
+    use sha2::{Digest, Sha256};
+    if backend != Backend::RustCpu {
+        return None;
+    }
+    let path = dir.join(file);
+    let rel = path
+        .strip_prefix(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("bundle/parity"))
+        .ok()?;
+    let (_, sha, why) = STALE_CPU_FIXTURES
+        .iter()
+        .find(|(f, _, _)| std::path::Path::new(f) == rel)?;
+    let digest = format!("{:x}", Sha256::digest(std::fs::read(&path).ok()?));
+    (digest == *sha).then_some(*why)
+}
+
 fn replay(backend: Backend) -> Option<(usize, Vec<String>)> {
     let device = match Device::open(backend, None) {
         Ok(d) => d,
@@ -142,24 +177,41 @@ fn replay(backend: Backend) -> Option<(usize, Vec<String>)> {
     }
     let index: Index =
         serde_json::from_str(&std::fs::read_to_string(&index_path).unwrap()).unwrap();
-    assert_eq!(index.backend, backend.name());
+    assert_eq!(index.backend, backend.source_backend().name());
     let mut programs = std::collections::HashMap::new();
     let mut failures = Vec::new();
     let mut passed = 0;
     for case in &index.cases {
+        if let Some(why) = stale(backend, &dir, &case.file) {
+            eprintln!("skipping {}.{}: {why}", case.interface, case.kernel);
+            continue;
+        }
         let program = programs.entry(case.interface.clone()).or_insert_with(|| {
             let entry = MANIFEST
                 .interface(&case.interface)
                 .expect("interface in manifest");
-            let module_source = entry.sources.get(backend.name()).expect("source");
+            let module_source = entry
+                .sources
+                .get(backend.source_backend().name())
+                .expect("source");
             let text = std::fs::read_to_string(
                 PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                     .join("bundle")
                     .join(&module_source.path),
             )
             .unwrap();
-            device.load(entry, &text).unwrap()
+            device.load(entry, &text).map_err(|e| e.to_string())
         });
+        let program = match program {
+            Ok(p) => p,
+            Err(e) => {
+                failures.push(format!(
+                    "{}.{}: load failed: {e}",
+                    case.interface, case.kernel
+                ));
+                continue;
+            }
+        };
         let mut npz = NpzReader::new(File::open(dir.join(&case.file)).unwrap()).unwrap();
         let inputs: Vec<Option<Npy>> = case
             .args

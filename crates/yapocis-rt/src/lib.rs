@@ -1,7 +1,8 @@
 //! Runtime for yapocis kernel bundles.
 //!
 //! A [`Device`] wraps one OpenCL, Metal or CUDA device (behind the `ocl`,
-//! `metal` and `cuda` Cargo features). A [`Program`] is one interface variant
+//! `metal` and `cuda` Cargo features), or the host CPU (`rustcpu`: Rust ports of
+//! the OpenCL kernels, for machines with no GPU and no OpenCL driver). A [`Program`] is one interface variant
 //! from a bundle compiled for that device; [`Program::call`] turns user
 //! arguments into the kernel argument list exactly as the Python runtime does
 //! (through `yapocis-bundle`), uploads, launches, and reads outputs back.
@@ -21,6 +22,8 @@ pub mod host_data;
 pub mod program;
 pub mod raw;
 
+#[cfg(feature = "rustcpu")]
+pub mod cpu;
 #[cfg(feature = "cuda")]
 pub mod cuda;
 #[cfg(all(feature = "metal", any(target_os = "macos", target_os = "ios")))]

@@ -57,7 +57,7 @@ pub fn convolve_source(backend: Backend, name: &str, weights: &[f64]) -> Result<
     let lit: Vec<String> = weights.iter().map(|w| weight_literal(*w)).collect();
     let mut s = String::new();
     match backend {
-        Backend::Ocl => {
+        Backend::Ocl | Backend::RustCpu => {
             s.push_str(prologue(bundled, &["__kernel\nvoid box3("]));
             s.push_str(&format!(
                 "__kernel\nvoid {name}(int width,  __global float* a, __global float* ret )\n{{\n    size_t i = get_global_id(0);\n    float sum;\n    size_t right = width-{left};\n    sum = 0.0;\n    if ((i > (size_t){left}) &&  (i < right)) {{\n"
@@ -270,7 +270,7 @@ impl Convolve1D {
         }
         let (entry, texts) = convolve_entry(name, weights)?;
         let text = texts
-            .get(device.backend().name())
+            .get(device.backend().source_backend().name())
             .ok_or(Error::BackendUnavailable(device.backend()))?;
         Ok(Convolve1D {
             program: device.load(&entry, text)?,
@@ -329,7 +329,7 @@ pub fn convolvesep_source(backend: Backend, convs: &[(String, Vec<f64>)]) -> Res
     let bundled = backend_source(backend, convolvesep::source)?;
     let mut s = String::new();
     match backend {
-        Backend::Ocl => s.push_str(prologue(bundled, &["__kernel\nvoid gauss"])),
+        Backend::Ocl | Backend::RustCpu => s.push_str(prologue(bundled, &["__kernel\nvoid gauss"])),
         Backend::Metal => s.push_str(prologue(bundled, &["kernel void gauss"])),
         Backend::Cuda => s.push_str(prologue(bundled, &["extern \"C\" __kernel\nvoid gauss"])),
     }
@@ -338,7 +338,7 @@ pub fn convolvesep_source(backend: Backend, convs: &[(String, Vec<f64>)]) -> Res
         let lit: Vec<String> = conv.iter().map(|w| weight_literal(*w)).collect();
         let off = |j: usize| j as i64 - margin as i64;
         match backend {
-            Backend::Ocl => {
+            Backend::Ocl | Backend::RustCpu => {
                 s.push_str(&format!(
                     "__kernel\nvoid {name}(int vertical, int width, int height, __global float* a, __global float* ret )\n{{\n    size_t i = get_global_id(0);\n    size_t n = width*height;\n    float sum = 0.0;\n    if (!vertical && ((size_t)({margin}*height) < i) && (i < (n-{margin}*height))){{\n       // Horizontal convolution\n"
                 ));
@@ -517,7 +517,7 @@ pub fn load_convolvesep(device: &Device, weights: &[Vec<f64>]) -> Result<Program
         .collect();
     let (entry, texts) = convolvesep_entry(&convs)?;
     let text = texts
-        .get(device.backend().name())
+        .get(device.backend().source_backend().name())
         .ok_or(Error::BackendUnavailable(device.backend()))?;
     Ok(device.load(&entry, text)?)
 }

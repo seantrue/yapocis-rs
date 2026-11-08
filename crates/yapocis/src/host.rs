@@ -22,7 +22,8 @@ pub fn load<I: Interface>(device: &Device) -> Result<I> {
         .interface(I::ID)
         .unwrap_or_else(|| panic!("interface {} missing from its bundle's manifest", I::ID));
     let backend = device.backend();
-    let source = I::source(backend.name()).ok_or(Error::BackendUnavailable(backend))?;
+    let source =
+        I::source(backend.source_backend().name()).ok_or(Error::BackendUnavailable(backend))?;
     Ok(I::from_program(device.load(entry, source)?))
 }
 

@@ -26,6 +26,8 @@ pub fn available_backends() -> Vec<Backend> {
     v.push(Backend::Cuda);
     #[cfg(feature = "ocl")]
     v.push(Backend::Ocl);
+    #[cfg(feature = "rustcpu")]
+    v.push(Backend::RustCpu);
     v
 }
 
@@ -35,7 +37,8 @@ impl Device {
     /// `YAPOCIS_BACKEND` selects the backend (`ocl`, `metal`, `cuda` or their
     /// aliases) and `YAPOCIS_DEVICE` the device by name or index, as in Python.
     /// Without `YAPOCIS_BACKEND` the first backend in [`available_backends`]
-    /// that opens a device is used (Metal on macOS, then CUDA, then OpenCL).
+    /// that opens a device is used (Metal on macOS, then CUDA, then OpenCL,
+    /// then the CPU fallback).
     #[allow(clippy::should_implement_trait)]
     pub fn default() -> Result<Device> {
         let selector = std::env::var("YAPOCIS_DEVICE")
@@ -69,6 +72,8 @@ impl Device {
             Backend::Metal => Arc::new(crate::metal::MetalDevice::open(selector)?),
             #[cfg(feature = "cuda")]
             Backend::Cuda => Arc::new(crate::cuda::CudaDevice::open(selector)?),
+            #[cfg(feature = "rustcpu")]
+            Backend::RustCpu => Arc::new(crate::cpu::CpuDevice::open(selector)?),
             #[allow(unreachable_patterns)]
             other => return Err(Error::BackendUnavailable(other)),
         };
@@ -88,7 +93,8 @@ impl Device {
     }
 
     /// Compile one interface variant for this device. `source` is the rendered
-    /// text for this backend (from the bundle's `sources[backend].path`).
+    /// text for this backend (from the bundle's `sources[backend].path`; the
+    /// OpenCL text for the CPU backend, see [`Backend::source_backend`]).
     pub fn load(&self, entry: &InterfaceEntry, source: &str) -> Result<Program> {
         Program::load(self.clone(), entry, source)
     }
@@ -101,7 +107,7 @@ impl Device {
     ) -> Result<Program> {
         let src = entry
             .sources
-            .get(self.backend().name())
+            .get(self.backend().source_backend().name())
             .ok_or_else(|| Error::BackendUnavailable(self.backend()))?;
         let text = std::fs::read_to_string(bundle_dir.as_ref().join(&src.path))?;
         self.load(entry, &text)
