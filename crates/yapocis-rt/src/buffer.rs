@@ -59,7 +59,9 @@ impl BufferAny {
         &self.device
     }
 
-    pub(crate) fn alloc(device: Device, shape: &[usize], dtype: DType) -> Result<BufferAny> {
+    /// An uninitialised buffer of `shape` and `dtype` on `device` (for callers
+    /// that handle untyped arrays, such as the Python bindings).
+    pub fn alloc(device: Device, shape: &[usize], dtype: DType) -> Result<BufferAny> {
         let bytes = shape.iter().product::<usize>() * dtype.size_of();
         let raw = device.raw.alloc(bytes.max(1))?;
         Ok(BufferAny {
@@ -85,7 +87,8 @@ impl BufferAny {
         }
     }
 
-    pub(crate) fn upload_bytes(&self, data: &[u8]) -> Result<()> {
+    /// Copy `data` (native-endian elements of [`Self::dtype`]) to the start of the buffer.
+    pub fn upload_bytes(&self, data: &[u8]) -> Result<()> {
         if data.len() > self.raw.len_bytes() {
             return Err(Error::BufferSize {
                 have: self.raw.len_bytes(),
@@ -95,7 +98,8 @@ impl BufferAny {
         self.device.raw.upload(self.raw.as_ref(), data)
     }
 
-    pub(crate) fn download_bytes(&self, out: &mut [u8]) -> Result<()> {
+    /// Copy the start of the buffer into `out`.
+    pub fn download_bytes(&self, out: &mut [u8]) -> Result<()> {
         if out.len() > self.raw.len_bytes() {
             return Err(Error::BufferSize {
                 have: self.raw.len_bytes(),

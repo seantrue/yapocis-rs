@@ -7,8 +7,9 @@ Guidance for Claude Code in this repository.
 Rust runtime for the [yapocis](https://github.com/seantrue/Yapocis3) GPU kernels (OpenCL, Metal, CUDA), with no Python at runtime. The Python package is the single source of truth: `yapocis-tools bundle` renders its interfaces and templates into `crates/yapocis/bundle/`, which is vendored here and never edited by hand.
 
 - `crates/yapocis-bundle`: manifest schema, argument derivation, dispatch sizing (no GPU).
-- `crates/yapocis-rt`: devices, buffers, compilation cache, launches, the per-device buffer cache; features `ocl`, `metal`, `cuda`.
+- `crates/yapocis-rt`: devices, buffers, compilation cache, launches, the per-device buffer cache; features `ocl`, `metal`, `cuda`, `rustcpu` (Rust ports of the OpenCL kernels in `src/cpu/kernels/`, one module per interface, one function per kernel symbol).
 - `crates/yapocis`: generated typed API (`build.rs` calls `yapocis_bundle::codegen` on the manifest), library ports under `lib::*` (each cites the Python file it mirrors), examples.
+- `bindings/python`: PyO3 module `yapocis_rs` (outside the workspace; build with maturin), Yapocis3's `rustcpu` backend. Install into a venv with `uv pip install --no-deps` so NumPy is not replaced.
 - `crates/npexact`: bit-exact numpy host numerics (random, reduce, simd_math, hist, elementwise, extrema, order, fft), tested against per-host fixtures in `crates/npexact/fixtures/host/<host slug>/` (an M4 Max and yellowfin's Xeon; record yellowfin's from a temporary directory with only numpy: `host_fixtures.py` needs nothing else); no GPU.
 
 ## Commands
@@ -18,6 +19,7 @@ cargo fmt --all
 cargo clippy --workspace --all-targets --features yapocis/ocl,yapocis/metal -- -D warnings   # macOS
 cargo test --release --features yapocis/ocl,yapocis/metal                                     # M4 MacBook
 cargo test -p yapocis-bundle -p npexact                                                       # no GPU
+cargo test --release -p yapocis --features rustcpu                                                # CPU backend, vs PoCL's ocl/cpu fixtures
 YAPOCIS_PARITY_EXACT=1 cargo test --release --features yapocis/ocl,yapocis/metal              # zero-tolerance library parity
 yapocis-tools bundle --out /tmp/b --host-fixtures crates/npexact/fixtures/host                 # record this host's numpy results (from Yapocis3's venv)
 ```
@@ -33,6 +35,7 @@ cargo test --release --features yapocis/cuda,yapocis/ocl
 
 - `crates/yapocis/bundle/SOURCE` names the Yapocis3 ref the bundle came from; CI's drift job installs it and runs `scripts/check-bundle.sh`.
 - To change a kernel, change it in Yapocis3, then regenerate here from that commit and update `SOURCE`.
+- The CPU backend has no Python recorder: its tests replay `ocl/cpu` (PoCL, recorded on the Windows VM) or `YAPOCIS_CPU_REFERENCE`. Its ports follow the OpenCL text, quirks included; a kernel change in Yapocis3 needs the matching port change in `yapocis-rt/src/cpu/kernels/`.
 - Parity fixtures are recorded per device under `bundle/parity/<backend>/<device>/` and `bundle/parity/lib/<backend>/<device>/`. Record them on the machine that has the device (`--parity`, `--parity-lib`); tests compare only against fixtures from their own device.
 
 ## Constraints

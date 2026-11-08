@@ -620,7 +620,12 @@ fn kerneldraw_parity() {
 #[test]
 fn typeset_parity() {
     let mut any = false;
-    for backend in [Backend::Metal, Backend::Ocl, Backend::Cuda] {
+    for backend in [
+        Backend::Metal,
+        Backend::Ocl,
+        Backend::Cuda,
+        Backend::RustCpu,
+    ] {
         let Some((cases, _, _)) = fixtures(backend, "typeset") else {
             continue;
         };

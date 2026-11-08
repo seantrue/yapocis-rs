@@ -1,0 +1,26 @@
+[package]
+name = "yapocis-py"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Python bindings for yapocis-rs's CPU backend (Yapocis3's `rustcpu` backend)"
+
+# Built by maturin, outside the yapocis-rs workspace: a Python extension module
+# cannot link as a test binary, so `cargo test --workspace` must not see it.
+[workspace]
+
+[lib]
+name = "yapocis_rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+yapocis-rt = { path = "../../crates/yapocis-rt", features = ["rustcpu"] }
+pyo3 = { version = "0.30", features = ["extension-module", "abi3-py310"] }
+numpy = { version = "0.30", features = ["half"] }
+num-complex = "0.4"
+half = "2"
+serde_json = "1"
+
+[profile.release]
+debug = 0

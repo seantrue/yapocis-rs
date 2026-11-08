@@ -31,7 +31,7 @@ fn cnn_kernels_match_python() {
         let program = device
             .load(
                 entry,
-                yapocis::interfaces::cnn::source(backend.name()).unwrap(),
+                yapocis::interfaces::cnn::source(backend.source_backend().name()).unwrap(),
             )
             .unwrap();
         let dir = common::parity_lib_dir(backend);

@@ -1,0 +1,13 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "yapocis-rs"
+description = "yapocis-rs's CPU backend for Yapocis3 (YAPOCIS_BACKEND=rustcpu)"
+requires-python = ">=3.10"
+dependencies = ["numpy"]
+dynamic = ["version"]
+
+[tool.maturin]
+module-name = "yapocis_rs"

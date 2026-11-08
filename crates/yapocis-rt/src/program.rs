@@ -189,7 +189,7 @@ impl Program {
         let backend = device.backend();
         let src = entry
             .sources
-            .get(backend.name())
+            .get(backend.source_backend().name())
             .ok_or(Error::BackendUnavailable(backend))?;
         let key = cache::cache_key(backend, &device.raw.identity(), source, &src.build_options);
         let _span = tracing::info_span!("compile", interface = %entry.id, backend = backend.name())

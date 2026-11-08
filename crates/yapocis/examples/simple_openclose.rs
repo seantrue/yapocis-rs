@@ -39,6 +39,13 @@ fn main() -> yapocis::Result<()> {
         Backend::Ocl => (OCL, false),
         Backend::Metal => (METAL, false),
         Backend::Cuda => (CUDA, true),
+        Backend::RustCpu => {
+            // The CPU backend runs Rust ports of bundled kernels; it cannot compile source text.
+            println!(
+                "the CPU backend runs only bundled kernels; pick a GPU backend for inline source"
+            );
+            return Ok(());
+        }
     };
     // Describe the kernel the way the interface `kernel sum(in float a, in float b, out_like a);` does.
     let manifest_entry = serde_json::json!({

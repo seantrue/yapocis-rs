@@ -17,6 +17,37 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-08 — The `rustcpu` backend: every kernel in plain Rust on the CPU, and Python bindings for Yapocis3 (Claude Opus 5.5)
+
+The maintainer: "Start a worktree to provide a CPU only version of all kernels. Emphasize simplicity and readability of the generated code. The object is to provide a fallback for systems … that do not have any GPU (even a software OpenCL) implementation … Attempt parallelism only if it is easy to reason about." Later: "go ahead with rustcpu" (a Yapocis3 backend through Python bindings), and "backend name should be the same -- lets go with rustcpu for both."
+
+**The backend (`yapocis-rt`, feature `rustcpu`, `Backend::RustCpu`).** It implements the existing `RawDevice` interface, so argument derivation, dispatch sizes, the buffer cache and every library port are shared with the GPU backends. Buffers are host memory. "Compiling" an interface looks up its Rust ports, and a launch calls the port with the arguments in the OpenCL kernel's order. The ports follow the bundle's OpenCL text, quirks included: boundary tests, integer types, and `double` literals computed in `f64`. The numbax kernels were only an outline, because they pad and guard differently. The convolution families read their weights back out of the OpenCL source, so weights generated at runtime work too. Parallelism (rayon) is used only where each work item writes just its own outputs, through two helpers (`par::map`, `par::map_chunks`). Histograms, atomics and scatter writes run sequentially. A registry (`cpu::kernels::register`) lets a crate with its own bundle add ports; impressionist-rs's yapocis-external uses it.
+
+- `crates/yapocis-rt/src/cpu/`: the device, argument views and parallel helpers (~420 LOC), and 174 kernel symbols ported in `kernels/` (~3,000 LOC). One coordinating session wrote the plumbing and the convolution, operator and mandelbrot ports; five parallel sub-agents ported the other families.
+- `Backend::source_backend()`: the CPU backend loads the OpenCL source and launches like OpenCL. `BufferAny::alloc`, `upload_bytes` and `download_bytes` are now public, for the bindings.
+- Tests: the parity replay runs on the CPU against PoCL's CPU OpenCL fixtures (`ocl/cpu`, or `YAPOCIS_CPU_REFERENCE`). `tests/cpu_{filters,pixels,cnn,signal}.rs` compare the CPU with OpenCL and Metal for kernels the fixtures don't cover, and skip without a GPU (~750 LOC). CI gains a `rustcpu` job running the whole test suite on the CPU backend, the first kernel parity CI can run.
+- `bindings/python` (~320 LOC): the PyO3 module `yapocis_rs`, outside the workspace, used by Yapocis3's new `rustcpu` backend (Yapocis3 branch `rustcpu-backend`, uncommitted there). Yapocis3's suite on numbax plus rustcpu: 958 passed, 33 skipped, 0 failed.
+- README and CLAUDE.md sections. This commit also carries the earlier README update (the npzfile crate, complex64 multiply, Metal on iOS, and the quantile variants).
+
+**Verified:** on the M4 MacBook, `cargo test --release --workspace` with OpenCL, Metal and rustcpu: 118 passed. `-p yapocis --features rustcpu` alone: 72 passed. Clippy (`-D warnings`) is clean, including the bindings. Not run: CUDA hosts (no change to that path), and Linux CI (it runs when this is pushed).
+
+**Defects and corrections, and how they were caught:**
+- **Missed source lookups:** the first wiring took kernel sources by the backend's own name in `lib::convolve` and `lib::graphics`, so the CPU backend reported "backend unavailable". The test suite caught it.
+- **Hidden dependency:** `cpu/args.rs` used a bytemuck function that compiles only when another crate enables its `extern_crate_alloc` feature. A sub-agent's `cargo clippy -p yapocis-rt` caught it.
+- **Bad backend design (maintainer):** I first proposed that Yapocis3 select the Rust runtime's backend through `YAPOCIS_DEVICE`. The maintainer asked whether `YAPOCIS_BACKEND=rust YAPOCIS_DEVICE=cuda` would then do something. It would have, which showed that I was overloading a device selector. The design became a single CPU-only `rustcpu` backend.
+- **Two names (maintainer):** I named the Rust backend `cpu` while the Python one was `rustcpu`. The maintainer made it one name.
+- **Upgraded NumPy:** installing the wheel into Yapocis3's venv upgraded its NumPy from 2.3.3 to 2.5.4. I caught it from the install output and restored 2.3.3; installs now use `--no-deps`.
+- **Still present:** the per-element cost of `Input`/`Output` views. A benchmark against numbax (`claude-debug/PERF_NUMBAX_VS_CPU.md`) found that their `Deref` re-checks a byte-to-element cast on every access, which makes small memory-bound kernels 3 to 23× slower than numbax on one thread. A temporary experiment cut `add` from 2.24 ms to 0.49 ms, but no fix is applied.
+
+**Found and recorded, not fixed here (upstream or fixtures):**
+- **Stale fixture:** PoCL's `ocl/cpu` Mandelbrot fixture predates the first-escape change. It is skipped on the CPU by file hash until it is re-recorded on the Windows VM (the maintainer's call).
+- **Yapocis3 bundle quirks the ports reproduce:**
+  - vgg16 `matrix_multiply_simd` indexes its output in 1-D on Metal but 2-D in OpenCL.
+  - vgg16 `batch_norm` computes only part of its output, because `depth_of` means one dimension in dispatch and another in argument derivation.
+  - `zcs` reads its neighbours at channel 0 for every channel.
+  - The 3-D simplex fixtures differ by about 0.49 between OpenCL and Metal/CUDA.
+- **Reports:** `claude-debug/PERF_NUMBAX_VS_CPU.md` (the CPU backend is 2.8× faster than numbax on all cores, geometric mean, and 0.82× on one thread) and `claude-debug/MISSING_INTERFACES.md` (the 26 project interfaces in no yapocis-rs bundle).
+
 ### 2026-11-07 — CUDA simplex from Yapocis3 7e98bb0; the RTX 3080's re-recorded fixtures (Claude Opus 5.5)
 
 - **The kernel:** `bundle/cuda/simplex.cu` is regenerated from Yapocis3 `7e98bb0` (its #76). CUDA's `simplex2d` now takes its coordinates as OpenCL and Metal do; before, its field was theirs transposed (the maintainer: "Make cuda noise match").

@@ -556,7 +556,7 @@ impl Graphics1 {
         let entry = crate::MANIFEST
             .interface("graphics")
             .expect("graphics in manifest");
-        let source = crate::interfaces::graphics::source(device.backend().name())
+        let source = crate::interfaces::graphics::source(device.backend().source_backend().name())
             .ok_or(Error::BackendUnavailable(device.backend()))?;
         Ok(Graphics1 {
             engine: Engine::new(device, device.load(entry, source)?),
@@ -827,7 +827,7 @@ impl Graphics4 {
         let entry = crate::MANIFEST
             .interface("graphics4")
             .expect("graphics4 in manifest");
-        let source = crate::interfaces::graphics4::source(device.backend().name())
+        let source = crate::interfaces::graphics4::source(device.backend().source_backend().name())
             .ok_or(Error::BackendUnavailable(device.backend()))?;
         Ok(Graphics4 {
             engine: Engine::new(device, device.load(entry, source)?),
