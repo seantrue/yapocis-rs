@@ -17,6 +17,25 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-09 — A software renderer (Windows' WARP) is no longer taken for a GPU (Claude Opus 5.5)
+
+**What the maintainer asked for.** While virtimp_com_app's desktop app was being brought up on a Windows 11 ARM64 VM, the maintainer asked whether it was now "finding an OpenCL engine, and if so, if it's slower", then said "Yes" to fixing the choice here, on a branch, and testing it there.
+
+**What happened.** The VM has no GPU driver. Microsoft's OpenCL, OpenGL and Vulkan Compatibility Pack (installed for the app's OpenGL window) exposes Windows' software rasterizer as an OpenCL device named "Microsoft Basic Render Driver" (WARP, via OpenCLOn12). `Device::default` takes the first backend that opens, and OpenCL comes before rustcpu, so it chose WARP. A Pen and Ink #1 render that rustcpu did in 35.7 s had not finished on WARP after about 8 minutes at 100% of 4 vCPUs; the app's window starved meanwhile.
+
+**What the AI did** (~85 LOC of code, ~110 of tests):
+- `RawDevice::is_software_renderer` (default false); the OpenCL device answers by name. The list of names is one constant in `device.rs`, holding WARP's.
+- `Device::default` takes candidates through `first_hardware`: the first device that opens and isn't a software renderer wins; a software one is kept only as a last resort, so a build without rustcpu still renders (slowly) rather than finding nothing. Candidates are opened lazily, so nothing after the chosen device is opened. `YAPOCIS_BACKEND` and `YAPOCIS_DEVICE` still choose exactly what they name, WARP included.
+- Within OpenCL, the preference order (ocl/device.py's) is now `preferred_device`, a pure function, and WARP is never one of its picks while another device exists. OpenCLOn12 on a machine that does have a GPU (a Snapdragon laptop, say) can list WARP beside the GPU's adapter, and the old "first non-CPU device" rule could have taken WARP there. Otherwise the order is unchanged, including "else the last device".
+- 10 unit tests: the name match; `first_hardware` (hardware after software wins, software when nothing else opens, the last error when nothing opens, laziness); and `preferred_device` (vendor GPU first, an unnamed GPU over WARP listed first, a CPU device over WARP, WARP alone left to the last-device rule, the old last-device rule otherwise).
+
+**Checked.**
+- Mac: `cargo fmt`; clippy clean with `-D warnings` as CLAUDE.md gives it (`--features yapocis/ocl,yapocis/metal`) and for `yapocis-rt` with `ocl,rustcpu,metal`; `cargo test --release -p yapocis-rt --lib --features ocl,rustcpu,metal`: 13 passed (the 10 new ones among them).
+- ARM64 VM, compatibility pack installed, no `YAPOCIS_BACKEND`: virtimp_com_app's desktop app built against this branch (all five yapocis-rs crates patched to a local copy) chose `rustcpu: cpu` and rendered Pen and Ink #1 in 4.9 s.
+- Not checked: a machine with both a real GPU and WARP in its OpenCL list (covered only by the unit test), and the full GPU/parity suites, which this doesn't touch.
+
+**Ruled out.** `cargo clippy -p yapocis-rt --all-targets` with no backend feature fails with 4 errors (unreachable statement, unused `mut` and `selector`, `select` unused). They are the same on `main` before this change; that configuration isn't one CLAUDE.md builds.
+
 ### 2026-11-08 — Python bindings: embeddable, and NumPy arrays used in place (Claude Opus 5.5)
 
 The maintainer asked to "Bring ../impressionist forward to new crates", chose "Add the rustcpu engine", and then chose a wheel built from impressionist-rs that carries yapocis_external's ports too. Later: "Fix the GPU bugs, too".

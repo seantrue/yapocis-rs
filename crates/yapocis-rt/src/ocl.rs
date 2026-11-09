@@ -1,7 +1,7 @@
 //! OpenCL backend on `opencl3`, mirroring `yapocis/ocl/{device,device_manager,kernel}.py`.
 
 use crate::cache;
-use crate::device::{prefer, select};
+use crate::device::{is_software_renderer_name, prefer, select};
 use crate::error::{Error, Result};
 use crate::raw::{RawArg, RawBuffer, RawDevice, RawEvent, RawProgram};
 use opencl3::command_queue::CommandQueue;
@@ -53,8 +53,6 @@ impl OclDevice {
             .iter()
             .map(|d| d.name().unwrap_or_else(|_| "?".into()))
             .collect();
-        // ocl/device.py: prefer non-CPU nvidia, amd, intel; then CPU in the same
-        // order; else the last device.
         let is_cpu: Vec<bool> = devices
             .iter()
             .map(|d| {
@@ -63,23 +61,9 @@ impl OclDevice {
                     .unwrap_or(false)
             })
             .collect();
-        let preferred = |names: &[String]| -> Option<usize> {
-            for pass in [false, true] {
-                for key in ["nvidia", "amd", "intel"] {
-                    if let Some(i) = names.iter().enumerate().position(|(i, n)| {
-                        is_cpu[i] == pass && n.to_ascii_lowercase().contains(key)
-                    }) {
-                        return Some(i);
-                    }
-                }
-            }
-            if let Some(i) = (0..names.len()).find(|&i| !is_cpu[i]) {
-                return Some(i);
-            }
-            let _ = prefer; // apple: a single GPU device, handled by the non-CPU rule above
-            None
-        };
-        let index = select(B, &names, selector, preferred)?;
+        let index = select(B, &names, selector, |names| {
+            preferred_device(names, &is_cpu)
+        })?;
         let device = Device::new(ids[index]);
         let context = Context::from_device(&device).map_err(|e| err("create context", e))?;
         // Apple's OpenCL is 1.2: clCreateCommandQueueWithProperties is absent.
@@ -104,6 +88,34 @@ impl OclDevice {
     fn device_id(&self) -> cl_device_id {
         self.device.id()
     }
+}
+
+/// The device to use when none is asked for. As ocl/device.py: non-CPU nvidia,
+/// amd, intel; then CPU in the same order; then the first other non-CPU
+/// device; else the last device. A software renderer (WARP, see
+/// [`is_software_renderer_name`]) is never one of those picks while another
+/// device exists: on a machine with a GPU and the compatibility pack,
+/// OpenCLOn12 can list WARP beside the GPU's own adapter.
+fn preferred_device(names: &[String], is_cpu: &[bool]) -> Option<usize> {
+    let soft: Vec<bool> = names.iter().map(|n| is_software_renderer_name(n)).collect();
+    for pass in [false, true] {
+        for key in ["nvidia", "amd", "intel"] {
+            if let Some(i) = (0..names.len()).find(|&i| {
+                is_cpu[i] == pass && !soft[i] && names[i].to_ascii_lowercase().contains(key)
+            }) {
+                return Some(i);
+            }
+        }
+    }
+    if let Some(i) = (0..names.len()).find(|&i| !is_cpu[i] && !soft[i]) {
+        return Some(i);
+    }
+    let _ = prefer; // apple: a single GPU device, handled by the non-CPU rule above
+                    // "else the last device", but the last that isn't a software renderer
+    if let Some(i) = (0..names.len()).rev().find(|&i| !soft[i]) {
+        return Some(i);
+    }
+    None
 }
 
 struct OclProgram {
@@ -156,6 +168,10 @@ impl RawDevice for OclDevice {
 
     fn identity(&self) -> String {
         self.identity.clone()
+    }
+
+    fn is_software_renderer(&self) -> bool {
+        is_software_renderer_name(&self.name)
     }
 
     fn compile(
@@ -333,5 +349,53 @@ impl RawDevice for OclDevice {
 
     fn wait_all(&self) -> Result<()> {
         self.queue.finish().map_err(|e| err("finish", e))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::preferred_device;
+
+    const WARP: &str = "Microsoft Basic Render Driver";
+
+    fn pick(devices: &[(&str, bool)]) -> Option<usize> {
+        let names: Vec<String> = devices.iter().map(|(n, _)| n.to_string()).collect();
+        let is_cpu: Vec<bool> = devices.iter().map(|&(_, c)| c).collect();
+        preferred_device(&names, &is_cpu)
+    }
+
+    #[test]
+    fn a_vendor_gpu_still_comes_first() {
+        let devices = [
+            ("pthread-haswell", true),
+            ("NVIDIA GeForce RTX 3080", false),
+        ];
+        assert_eq!(pick(&devices), Some(1));
+    }
+
+    #[test]
+    fn an_unnamed_gpu_wins_over_warp_listed_first() {
+        // OpenCLOn12 on a Snapdragon laptop with the compatibility pack
+        let devices = [(WARP, false), ("Qualcomm(R) Adreno(TM) X1-85 GPU", false)];
+        assert_eq!(pick(&devices), Some(1));
+    }
+
+    #[test]
+    fn a_cpu_device_wins_over_warp() {
+        let devices = [("pthread-haswell", true), (WARP, false)];
+        assert_eq!(pick(&devices), Some(0));
+    }
+
+    #[test]
+    fn warp_alone_is_left_to_the_last_device_rule() {
+        // None: select() then takes the last device, WARP, so asking for
+        // OpenCL explicitly still works on such a machine.
+        assert_eq!(pick(&[(WARP, false)]), None);
+    }
+
+    #[test]
+    fn otherwise_the_last_device_as_before() {
+        let devices = [("pthread-a", true), ("pthread-b", true)];
+        assert_eq!(pick(&devices), Some(1));
     }
 }
