@@ -72,6 +72,37 @@ impl BufferAny {
         })
     }
 
+    /// A buffer over `len_bytes` of host memory at `ptr`, used in place, when
+    /// `device` runs kernels on host memory (the CPU backend); `None` on a GPU,
+    /// or when the backend cannot use this memory (it is not 8-byte aligned),
+    /// and the caller copies instead. For callers that own arrays as their
+    /// "device buffers", such as the Python bindings.
+    ///
+    /// # Safety
+    ///
+    /// The memory must stay valid until the buffer is dropped, and while it is
+    /// alive nothing else may write it (nor read it, if `writable`): kernels
+    /// write it if `writable` and they write the parameter it is bound to.
+    pub unsafe fn wrap_host(
+        device: &Device,
+        ptr: *mut u8,
+        len_bytes: usize,
+        writable: bool,
+        shape: &[usize],
+        dtype: DType,
+    ) -> Option<BufferAny> {
+        if !device.raw.runs_on_host() {
+            return None;
+        }
+        let raw = unsafe { device.raw.wrap_host(ptr, len_bytes, writable) }?;
+        Some(BufferAny::from_raw(
+            device.clone(),
+            Arc::from(raw),
+            shape,
+            dtype,
+        ))
+    }
+
     /// Wrap an existing raw buffer (from the buffer cache) with a new shape.
     pub(crate) fn from_raw(
         device: Device,

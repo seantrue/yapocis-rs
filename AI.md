@@ -17,7 +17,24 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
-### 2026-11-08 — rustcpu: no host copies, views that take their slice once, a parallel histogram (Claude Opus 5.5)
+### 2026-11-08 — Python bindings: embeddable, and NumPy arrays used in place (Claude Opus 5.5)
+
+The maintainer asked to "Bring ../impressionist forward to new crates", chose "Add the rustcpu engine", and then chose a wheel built from impressionist-rs that carries yapocis_external's ports too. Later: "Fix the GPU bugs, too".
+
+**What the AI did** (~130 LOC changed):
+- **Embeddable bindings.** `bindings/python` (`yapocis-py`) is also an rlib, with `add_to_module`. Its own module entry point is behind a default-on `module` feature. An extension module that also registers its own CPU ports can therefore build on it: impressionist-rs's `bindings/python` does, for yapocis_external. The two must share one yapocis-rt, so both come from the same yapocis-rs revision.
+- **NumPy arrays used in place.** The bindings now treat a NumPy array as its own device buffer, as numbax does and as a GPU's buffer bound to the array does. Each array is wrapped in place, writable, through the new public `BufferAny::wrap_host`, whatever the parameter's role, so a kernel's write to an `in` parameter persists. An array passed twice is one buffer; read-only arrays are never written; an array the backend can't use in place is copied in and back.
+- **Why:** yapocis_external's `label` interface declares `first`'s output as `in`, and Virtual Impressionist relies on the kernel's write to it persisting, as it does on a GPU and on numbax. Before this change, VI's two label tests produced empty pictures on rustcpu.
+- **README:** how to embed the bindings.
+
+**Verified (M4 MacBook):**
+- **yapocis-rs:** workspace tests (OpenCL, Metal, rustcpu) without npexact, 90 passed; `-p npexact`, 28 passed.
+  - In a combined run the five npexact fixture tests failed. Their test binaries had been built from another session's scratch copy of yapocis-rs (`/private/tmp/.../rsmerge/yapocis-rs`), which shares this target directory, and they looked for fixtures under that copy's path. Built here, they pass.
+- **Yapocis3** with the rebuilt wheel, `tests/lib` and `tests/backend` on rustcpu: 442 passed, 44 skipped, 0 failed.
+- **Virtual Impressionist** on the impressionist-rs wheel built from this: 699 passed, 0 failed (3 failed before).
+- Clippy is clean, including the bindings with and without `module`.
+
+
 
 The maintainer asked for a rustcpu performance test on yellowfin, then: "do all three fixes and rerun the affected code on yellowfin". The fixes were the three this ledger's previous entry and `claude-debug/PERF_RUSTCPU_YELLOWFIN.md` proposed.
 
@@ -48,6 +65,8 @@ The maintainer asked for a rustcpu performance test on yellowfin, then: "do all 
 - **A deadlock in the first `CpuBuffer::read`:** it blocked on its lock. Where an output was taken before an aliased input, that would have deadlocked instead of panicking with "take inputs before outputs". I noticed it reviewing my own change before it ran, and replaced it with `try_read`.
 - **The buffer-cache test failed** on the CPU backend, because the CPU backend no longer allocates device buffers. That was the intended effect of fix 2; the test was adjusted to assert it.
 
+**Merged:** PR #17, as `570655a`, after CI passed: build, bundle-drift and `rustcpu` on Linux x86-64. impressionist-rs was then repinned to it (its PR #48). The working worktree was removed. Its untracked `claude-debug` material (the benchmark scripts and Rust benchmark crate, the raw M4 and yellowfin results, the report PDFs) was first moved into the main checkout's `claude-debug/` and checked byte for byte. yellowfin's benchmark worktree (`~/workspace/yapocis-rs-perf`) was removed too; its results had already been copied here.
+
 ### 2026-11-08 — The `rustcpu` backend: every kernel in plain Rust on the CPU, and Python bindings for Yapocis3 (Claude Opus 5.5)
 
 The maintainer: "Start a worktree to provide a CPU only version of all kernels. Emphasize simplicity and readability of the generated code. The object is to provide a fallback for systems … that do not have any GPU (even a software OpenCL) implementation … Attempt parallelism only if it is easy to reason about." Later: "go ahead with rustcpu" (a Yapocis3 backend through Python bindings), and "backend name should be the same -- lets go with rustcpu for both."
@@ -61,6 +80,8 @@ The maintainer: "Start a worktree to provide a CPU only version of all kernels. 
 - README and CLAUDE.md sections. This commit also carries the earlier README update (the npzfile crate, complex64 multiply, Metal on iOS, and the quantile variants).
 
 **Verified:** on the M4 MacBook, `cargo test --release --workspace` with OpenCL, Metal and rustcpu: 118 passed. `-p yapocis --features rustcpu` alone: 72 passed. Clippy (`-D warnings`) is clean, including the bindings. Not run: CUDA hosts (no change to that path), and Linux CI (it runs when this is pushed).
+
+**Merged:** PR #16, as `abdd32b`, after CI passed: build, bundle-drift, and the new `rustcpu` job, which ran the whole yapocis test suite on the CPU backend on Linux x86-64. The Yapocis3 side of the bindings merged there as PR #77 (`9d4ec87`), and impressionist-rs's ports as PR #48 (`3bdcc2a`).
 
 **Defects and corrections, and how they were caught:**
 - **Missed source lookups:** the first wiring took kernel sources by the backend's own name in `lib::convolve` and `lib::graphics`, so the CPU backend reported "backend unavailable". The test suite caught it.

@@ -87,6 +87,14 @@ one can replace the version the venv's Numba and fixtures were made with.
 Interfaces outside this bundle (project interfaces) have no CPU port and fail to
 load with "has no CPU port".
 
+A crate with its own bundle and ports builds its own `yapocis_rs` module instead:
+it depends on `yapocis-py` (this crate, with `default-features = false` to leave out
+the module entry point), registers its ports, and calls
+`yapocis_rs::add_to_module`. Ports and bindings must share one yapocis-rt, so both
+come from the same yapocis-rs revision. impressionist-rs's `bindings/python` does
+this for yapocis_external (distribution `yapocis-rs-external`); install that wheel
+or this one, not both.
+
 ## Calling conventions
 
 The generated methods follow the Python runtime:
