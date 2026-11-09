@@ -12,7 +12,15 @@ description = "Python bindings for yapocis-rs's CPU backend (Yapocis3's `rustcpu
 
 [lib]
 name = "yapocis_rs"
-crate-type = ["cdylib"]
+# cdylib: this crate's own wheel. rlib: for another crate's extension module that
+# embeds these bindings (impressionist-rs's, which adds yapocis_external's ports);
+# it turns off `module` so only its own module entry point is exported.
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["module"]
+# The `yapocis_rs` module entry point (PyInit_yapocis_rs).
+module = []
 
 [dependencies]
 yapocis-rt = { path = "../../crates/yapocis-rt", features = ["rustcpu"] }

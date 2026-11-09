@@ -15,10 +15,13 @@
 //!
 //! Arguments are user arguments in the kernel's order: NumPy arrays (already
 //! C-contiguous and of the parameter's dtype; the Python side converts) and
-//! numbers. Arrays for `in` parameters are read in place. Arrays for `out`,
-//! `inout` and `resident` parameters are copied in before the launch and
-//! written back after it, so a NumPy array plays the part of a device buffer
-//! (as it does on numbax).
+//! numbers. A NumPy array plays the part of a device buffer, as on numbax and
+//! as a GPU's buffer bound to the array does: the kernel runs on it in place,
+//! whatever the parameter's role, so a kernel that writes an `in` parameter
+//! (yapocis_external's `label` `first` alias does) leaves the result in the
+//! array for the next call. An array passed twice is one buffer. Read-only
+//! arrays are never written; an array the backend cannot use in place (not
+//! 8-byte aligned) is copied in and back.
 
 use numpy::{
     Complex32, Complex64, PyArray1, PyArrayDescrMethods, PyArrayMethods, PyUntypedArray,
@@ -26,10 +29,10 @@ use numpy::{
 };
 use pyo3::exceptions::{PyRuntimeError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use yapocis_rt::bundle::{ParamKind, Role};
+use yapocis_rt::bundle::ParamKind;
 use yapocis_rt::{
-    Backend, BufferAny, CallArg, CallOptions, DType, Device, HostData, HostView, InterfaceEntry,
-    OutputValue, Program,
+    Backend, BufferAny, CallArg, CallOptions, DType, Device, HostData, InterfaceEntry, OutputValue,
+    Program,
 };
 
 fn err(e: yapocis_rt::Error) -> PyErr {
@@ -46,7 +49,9 @@ impl PyDevice {
     #[new]
     #[pyo3(signature = (selector = None))]
     fn new(selector: Option<&str>) -> PyResult<Self> {
-        Ok(PyDevice(Device::open(Backend::RustCpu, selector).map_err(err)?))
+        Ok(PyDevice(
+            Device::open(Backend::RustCpu, selector).map_err(err)?,
+        ))
     }
 
     #[getter]
@@ -72,6 +77,7 @@ struct Array {
     shape: Vec<usize>,
     data: *mut u8,
     len: usize,
+    writeable: bool,
 }
 
 fn dtype_of(kind: u8, size: usize) -> Option<DType> {
@@ -106,11 +112,16 @@ fn array(a: &Bound<'_, PyUntypedArray>, param: &str) -> PyResult<Array> {
     // SAFETY: a NumPy array's `data` points at `len() * itemsize` bytes,
     // contiguous (checked above), alive while `a` is.
     let data = unsafe { (*a.as_array_ptr()).fields.data as *mut u8 };
+    let writeable = a
+        .getattr("flags")?
+        .getattr("writeable")?
+        .extract::<bool>()?;
     Ok(Array {
         dtype,
         shape: a.shape().to_vec(),
         data,
         len: a.len() * descr.itemsize(),
+        writeable,
     })
 }
 
@@ -185,11 +196,10 @@ impl PyProgram {
         }
         let device = self.0.device();
 
-        // Writable arrays go through a device buffer, written back after the
-        // launch; read-only ones are read in place.
-        let mut writable: Vec<(BufferAny, Array)> = Vec::new();
-        let mut arrays: Vec<Option<Array>> = Vec::new();
-        let mut buffers: Vec<Option<usize>> = Vec::new();
+        // One buffer per distinct array (by address): the array itself, used in
+        // place, or (if the backend cannot) a copy written back after the launch.
+        let mut buffers: Vec<(BufferAny, Array, bool)> = Vec::new(); // (buffer, array, copied)
+        let mut slot: Vec<Option<usize>> = Vec::new(); // argument -> buffer
         let mut scalars: Vec<f64> = Vec::new();
         for (arg, param) in args.iter().zip(&kernel.user_args) {
             let entry = kernel
@@ -201,24 +211,36 @@ impl PyProgram {
                 .ok_or_else(|| PyTypeError::new_err(format!("{name}: no parameter {param}")))?;
             if entry.kind == ParamKind::Scalar {
                 scalars.push(arg.extract::<f64>()?);
-                arrays.push(None);
-                buffers.push(None);
+                slot.push(None);
                 continue;
             }
             scalars.push(0.0);
             let a = array(arg.cast::<PyUntypedArray>()?, param)?;
-            if matches!(entry.role, Some(Role::Out | Role::Inout | Role::Resident)) {
-                let buf = BufferAny::alloc(device.clone(), &a.shape, a.dtype).map_err(err)?;
-                // SAFETY: see `array`; only read here.
-                let bytes = unsafe { std::slice::from_raw_parts(a.data, a.len) };
-                buf.upload_bytes(bytes).map_err(err)?;
-                buffers.push(Some(writable.len()));
-                writable.push((buf, a));
-                arrays.push(None);
-            } else {
-                buffers.push(None);
-                arrays.push(Some(a));
+            if let Some(k) = buffers
+                .iter()
+                .position(|(_, b, _)| b.data == a.data && b.len == a.len)
+            {
+                slot.push(Some(k)); // the same array again: the same buffer
+                continue;
             }
+            // SAFETY: the array is alive and unchanged by Python for the whole
+            // call (we hold it and the GIL), and the buffer is dropped before
+            // `call` returns.
+            let wrapped = unsafe {
+                BufferAny::wrap_host(device, a.data, a.len, a.writeable, &a.shape, a.dtype)
+            };
+            let (buf, copied) = match wrapped {
+                Some(buf) => (buf, false),
+                None => {
+                    let buf = BufferAny::alloc(device.clone(), &a.shape, a.dtype).map_err(err)?;
+                    // SAFETY: see `array`; only read here.
+                    let bytes = unsafe { std::slice::from_raw_parts(a.data, a.len) };
+                    buf.upload_bytes(bytes).map_err(err)?;
+                    (buf, true)
+                }
+            };
+            slot.push(Some(buffers.len()));
+            buffers.push((buf, a, copied));
         }
 
         let opts = CallOptions {
@@ -228,17 +250,10 @@ impl PyProgram {
         };
         let outputs = {
             let mut call_args: Vec<CallArg<'_>> = Vec::with_capacity(args.len());
-            for i in 0..args.len() {
-                call_args.push(match (&arrays[i], buffers[i]) {
-                    (Some(a), _) => CallArg::In(HostView {
-                        dtype: a.dtype,
-                        shape: &a.shape,
-                        // SAFETY: see `array`; read-only, and not written until
-                        // these views are dropped.
-                        bytes: unsafe { std::slice::from_raw_parts(a.data, a.len) },
-                    }),
-                    (None, Some(w)) => CallArg::Buffer(&writable[w].0),
-                    (None, None) => CallArg::Scalar(scalars[i]),
+            for (i, s) in slot.iter().enumerate() {
+                call_args.push(match s {
+                    Some(k) => CallArg::Buffer(&buffers[*k].0),
+                    None => CallArg::Scalar(scalars[i]),
                 });
             }
             self.0
@@ -247,12 +262,16 @@ impl PyProgram {
                 .outputs
         };
 
-        // Write the writable arrays back.
-        for (buf, a) in &writable {
-            // SAFETY: see `array`; no other view of these bytes is alive now.
-            let bytes = unsafe { std::slice::from_raw_parts_mut(a.data, a.len) };
-            buf.download_bytes(bytes).map_err(err)?;
+        // Write copied arrays back (those used in place already hold the result),
+        // except read-only ones, which kernels may not change.
+        for (buf, a, copied) in &buffers {
+            if *copied && a.writeable {
+                // SAFETY: see `array`; no other view of these bytes is alive now.
+                let bytes = unsafe { std::slice::from_raw_parts_mut(a.data, a.len) };
+                buf.download_bytes(bytes).map_err(err)?;
+            }
         }
+        drop(buffers);
 
         let mut result = Vec::with_capacity(outputs.len());
         for out in outputs {
@@ -270,10 +289,18 @@ impl PyProgram {
     }
 }
 
-#[pymodule]
-fn yapocis_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
+/// Add the module's classes (`Device`, `Program`) and `__version__` to `m`.
+/// Another crate's extension module embeds the bindings with this, after
+/// registering its own CPU ports (`yapocis_rt::cpu::kernels::register`).
+pub fn add_to_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyDevice>()?;
     m.add_class::<PyProgram>()?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
+}
+
+#[cfg(feature = "module")]
+#[pymodule]
+fn yapocis_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    add_to_module(m)
 }
