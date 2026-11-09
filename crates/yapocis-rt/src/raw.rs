@@ -52,6 +52,14 @@ pub trait RawDevice: Send + Sync {
     fn runs_on_host(&self) -> bool {
         false
     }
+    /// A software stand-in for a GPU: Windows' WARP ("Microsoft Basic Render
+    /// Driver"), which the OpenCL, OpenGL and Vulkan Compatibility Pack offers
+    /// as an OpenCL device on a machine with no GPU driver. It works, but far
+    /// slower than the CPU backend, so [`crate::Device::default`] takes it only
+    /// when no other backend opens a device.
+    fn is_software_renderer(&self) -> bool {
+        false
+    }
     /// A buffer over `len` bytes of host memory at `ptr`, used in place by
     /// backends whose kernels can read host memory (the CPU backend), so a
     /// call copies nothing; `None` (the default, every GPU backend) means

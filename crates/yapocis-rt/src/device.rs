@@ -38,7 +38,9 @@ impl Device {
     /// aliases) and `YAPOCIS_DEVICE` the device by name or index, as in Python.
     /// Without `YAPOCIS_BACKEND` the first backend in [`available_backends`]
     /// that opens a device is used (Metal on macOS, then CUDA, then OpenCL,
-    /// then the CPU fallback).
+    /// then the CPU fallback). A software renderer (see
+    /// [`RawDevice::is_software_renderer`]) is passed over while a later
+    /// backend opens a device, unless `YAPOCIS_DEVICE` named it.
     #[allow(clippy::should_implement_trait)]
     pub fn default() -> Result<Device> {
         let selector = std::env::var("YAPOCIS_DEVICE")
@@ -51,14 +53,20 @@ impl Device {
                 return Device::open(backend, selector.as_deref());
             }
         }
-        let mut last = None;
-        for backend in available_backends() {
-            match Device::open(backend, selector.as_deref()) {
-                Ok(d) => return Ok(d),
-                Err(e) => last = Some(e),
+        let candidates = available_backends()
+            .into_iter()
+            .map(|backend| Device::open(backend, selector.as_deref()));
+        first_hardware(candidates, |d| {
+            let software = selector.is_none() && d.raw.is_software_renderer();
+            if software {
+                tracing::info!(
+                    backend = d.backend().name(),
+                    device = %d.name(),
+                    "software renderer: trying the other backends first"
+                );
             }
-        }
-        Err(last.unwrap_or(Error::BackendUnavailable(Backend::Ocl)))
+            software
+        })
     }
 
     /// Open a device on `backend`. `selector` is an index or a device name
@@ -197,4 +205,104 @@ pub(crate) fn prefer(names: &[String], keys: &[&str]) -> Option<usize> {
         }
     }
     None
+}
+
+/// Device names that are software stand-ins for a GPU. Windows' WARP is what
+/// the OpenCL, OpenGL and Vulkan Compatibility Pack (OpenCLOn12) exposes when
+/// a machine has no GPU driver, as in a VM. A render the CPU backend did in
+/// 36 s had not finished on it after 8 minutes.
+const SOFTWARE_RENDERERS: &[&str] = &["Microsoft Basic Render Driver"];
+
+/// Whether `name` is a software renderer posing as a GPU (case-insensitive).
+#[allow(dead_code)]
+pub(crate) fn is_software_renderer_name(name: &str) -> bool {
+    SOFTWARE_RENDERERS
+        .iter()
+        .any(|s| name.trim().eq_ignore_ascii_case(s))
+}
+
+/// The first candidate that opened and isn't `is_software`; else the first
+/// software one; else the last error. Candidates are taken lazily, so nothing
+/// after the first hardware device is opened.
+pub(crate) fn first_hardware<T>(
+    candidates: impl IntoIterator<Item = Result<T>>,
+    is_software: impl Fn(&T) -> bool,
+) -> Result<T> {
+    let mut software = None;
+    let mut last = None;
+    for candidate in candidates {
+        match candidate {
+            Ok(d) if is_software(&d) => {
+                software.get_or_insert(d);
+            }
+            Ok(d) => return Ok(d),
+            Err(e) => last = Some(e),
+        }
+    }
+    software.ok_or_else(|| last.unwrap_or(Error::BackendUnavailable(Backend::Ocl)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+
+    #[test]
+    fn warp_is_a_software_renderer() {
+        assert!(is_software_renderer_name("Microsoft Basic Render Driver"));
+        assert!(is_software_renderer_name(" microsoft basic render driver "));
+        assert!(!is_software_renderer_name("NVIDIA GeForce RTX 3080"));
+        assert!(!is_software_renderer_name(
+            "Qualcomm(R) Adreno(TM) X1-85 GPU"
+        ));
+        assert!(!is_software_renderer_name("cpu"));
+    }
+
+    fn soft(name: &&str) -> bool {
+        is_software_renderer_name(name)
+    }
+
+    #[test]
+    fn hardware_wins_over_an_earlier_software_device() {
+        let got = first_hardware([Ok("Microsoft Basic Render Driver"), Ok("cpu")], soft);
+        assert_eq!(got.unwrap(), "cpu");
+    }
+
+    #[test]
+    fn a_software_device_is_used_when_nothing_else_opens() {
+        let got = first_hardware(
+            [
+                Ok("Microsoft Basic Render Driver"),
+                Err(Error::NoDevices(Backend::RustCpu)),
+            ],
+            soft,
+        );
+        assert_eq!(got.unwrap(), "Microsoft Basic Render Driver");
+    }
+
+    #[test]
+    fn the_last_error_comes_back_when_nothing_opens() {
+        let got: Result<&str> = first_hardware(
+            [
+                Err(Error::NoDevices(Backend::Cuda)),
+                Err(Error::NoDevices(Backend::Ocl)),
+            ],
+            soft,
+        );
+        assert!(matches!(got, Err(Error::NoDevices(Backend::Ocl))));
+    }
+
+    #[test]
+    fn nothing_after_the_first_hardware_device_is_opened() {
+        let opened = Cell::new(0);
+        let candidates = ["NVIDIA GeForce RTX 3080", "cpu"].into_iter().map(|n| {
+            opened.set(opened.get() + 1);
+            Ok(n)
+        });
+        assert_eq!(
+            first_hardware(candidates, soft).unwrap(),
+            "NVIDIA GeForce RTX 3080"
+        );
+        assert_eq!(opened.get(), 1);
+    }
 }
