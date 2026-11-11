@@ -17,6 +17,16 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-11 — CUDA's open is an error, not a panic, where there is no NVIDIA driver (Claude Opus 5.5)
+
+**What the maintainer asked for.** PlumImpress B7: "deploy on Cuda by preferences over OpenCL". PlumImpress now tries CUDA first off the Mac, so a Linux machine with no NVIDIA driver must fall back to OpenCL, not lose its engine.
+
+**The defect.** cudarc (`dynamic-loading`) loads libcuda and NVRTC on first use and panics when either isn't there, so `CudaDevice::open` panicked instead of returning an error; `Device::default` with the `cuda` feature panicked on such a machine before reaching OpenCL. AI-written code (the CUDA backend) that assumed a driver.
+
+**What the AI did** (~10 LOC, ~12 of test): `CudaDevice::open` checks cudarc's `is_culib_present` for the driver and for NVRTC first and returns `Error::Backend` naming the missing library. A unit test opens CUDA under `catch_unwind` and requires no panic (fails before the change on a Mac built with `cuda`).
+
+**Checked.** Mac: fmt; clippy `-D warnings` with `yapocis/ocl,yapocis/metal,yapocis/cuda`; the new test with `-p yapocis-rt --features cuda` (no driver: an error). yellowfin: the same test with the driver present (opens). The full release suites weren't rerun: the change is in `cuda.rs` alone, which the Mac's ocl/metal gate doesn't compile.
+
 ### 2026-11-09 — A software renderer (Windows' WARP) is no longer taken for a GPU (Claude Opus 5.5)
 
 **What the maintainer asked for.** While virtimp_com_app's desktop app was being brought up on a Windows 11 ARM64 VM, the maintainer asked whether it was now "finding an OpenCL engine, and if so, if it's slower", then said "Yes" to fixing the choice here, on a branch, and testing it there.
