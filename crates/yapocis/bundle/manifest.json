@@ -5880,7 +5880,7 @@
       "sources": {
         "ocl": {
           "path": "ocl/colormath.cl",
-          "sha256": "984b616c5a9b542470684d680e68130de954bfde95f8a566ae8212a5e14609a6",
+          "sha256": "f843d4c67f4b363cf6edb83392493bc1f286c7ce85f711aa5e09268a8545b78b",
           "build_options": [
             "-w",
             "-cl-fast-relaxed-math",
@@ -5891,12 +5891,12 @@
         },
         "metal": {
           "path": "metal/colormath.metal",
-          "sha256": "0ac3d5ce2668c5cd6a38724ad06d6f245e0f78c5e47d65c2b068b922297b2ab0",
+          "sha256": "1bbe7c368d028691db273b50f9d58c787c9c4d11c638841e3277c181fc5ad6d0",
           "build_options": []
         },
         "cuda": {
           "path": "cuda/colormath.cu",
-          "sha256": "68ff75d1c653173d8d382a736aee519978272d250b66287017fbfad3da3704a1",
+          "sha256": "01baf99607ad28dd971f46fde2c72207e88ad1f6ccbf06b5f9e8fb2c3d2b596d",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",

@@ -240,12 +240,18 @@ fn transform(a: &Args) {
     });
 }
 
-/// `xyz2xyY(float* input, float* output)`: `(X/sum, Y/sum, Y)`.
+/// `xyz2xyY(float* input, float* output)`: `(X/sum, Y/sum, Y)`, or `(0, 0, Y)`
+/// where `sum == 0` (black, or a zero sum with mixed signs): the kernel's
+/// `sum != 0.0f ? x/sum : 0.0f` (Yapocis3 #66).
 #[allow(non_snake_case)]
 fn xyz2xyY(a: &Args) {
     per_pixel(a, 1, |[x, y, z]| {
         let sum = x + y + z;
-        [x / sum, y / sum, y]
+        if sum != 0.0 {
+            [x / sum, y / sum, y]
+        } else {
+            [0.0, 0.0, y]
+        }
     });
 }
 

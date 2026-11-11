@@ -17,6 +17,21 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-11 — `xyz2xyY` of a zero sum is (0, 0, Y), and the bundle from Yapocis3 8828079 (Claude Opus 5.5)
+
+**What the maintainer asked for.** Yapocis3 #66: the xyY of black was NaN on the GPU backends and rustcpu, and 0 on numbax. The maintainer chose "Z . With check. Patch. Yapocis first. Accept 0": black gives 0 on every backend, through an explicit `sum != 0` check rather than an epsilon; Yapocis3 first, then this repository; and a zero sum with mixed signs gives 0 too. Yapocis3 merged its half as PR #85 (`8828079`). The maintainer then said "go for 1" for this step.
+
+**What the AI did.**
+- `crates/yapocis-rt/src/cpu/kernels/colormath.rs` (~8 LOC): the CPU port of `xyz2xyY` returns `(0, 0, Y)` when `x + y + z == 0`, the OpenCL text's `sum != 0.0f ? x/sum : 0.0f`. Before, it gave NaN for black and ±inf for (0.5, −0.5, 0). `xyY2xyz` already returned (0, 0, 0) at y == 0 and isn't changed.
+- The bundle re-exported with `yapocis-tools bundle --fixtures` from Yapocis3 `8828079`. Nothing changed but #66's: the `xyz2xyY` lines in `ocl/colormath.cl`, `metal/colormath.metal` and `cuda/colormath.cu`, their three sha256 entries in `manifest.json`, and `SOURCE`. The only kernel-template commit in Yapocis3 between `7e98bb0` and `8828079` is `575c0a5` (#66), and `fixtures/derivation.json` came out byte-identical. `scripts/check-bundle.sh` against `8828079`: "bundle is up to date".
+- `crates/yapocis/tests/libs.rs` (~67 LOC), on every backend that opens: `xyz2xyy_of_a_zero_sum_is_zero` (+0 and −0 black and (0.5, −0.5, 0) give (+0, +0, Y) bit for bit; an ordinary pixel still divides) and `xyy2xyz_with_zero_y_is_zero` (y = ±0 gives (0, 0, 0)). The first failed before the change on rustcpu, OpenCL and Metal (NaN, NaN; inf, −inf). The second passed before and after: it guards behaviour that was already right.
+- No parity fixture was re-recorded. Every recorded `colormath.xyz2xyY` input (M4 OpenCL and Metal, RTX 3080 OpenCL and CUDA, PoCL CPU) was checked: none has a zero sum, so none of their outputs can change.
+- Cross-check, outside this repository: Yapocis3's numbax `xyz2xyY` (jit) agrees bit for bit with an f32 emulation of this port on 1.5 million uniform, log-scaled and signed pixels and on the zero sums.
+
+**Checked** (M4 Max). `cargo fmt --all --check`; clippy `-D warnings` with `yapocis/ocl,yapocis/metal`; `cargo test --release --features yapocis/ocl,yapocis/metal`: 129 passed, 0 failed; `cargo test -p yapocis-bundle -p npexact`: 38 passed; `cargo test --release -p yapocis --features rustcpu`: 74 passed. `YAPOCIS_PARITY_EXACT=1`: 127 passed, and the two known last-bit failures (`custom_weights_match_cpu_and_bundled_variant` and `fft_analysis_matches_python`'s coherence, both on Metal), with the same values on `main`. All with `--locked`; `Cargo.lock` didn't move. **Not run:** CUDA and NVIDIA OpenCL on yellowfin, skipped at the maintainer's direction ("CP, skip the yellowfin tests"), and PoCL.
+
+**Ruled out.** The first GPU test run failed `npexact`'s `complex_multiply_matches_numpy` with "No such file or directory". Its release test binary was stale, built on 2026-11-07 from another clone that shared this `target/`, so its `CARGO_MANIFEST_DIR` pointed at a scratch directory that no longer exists, and cargo didn't rebuild it. `cargo clean --release -p npexact` fixed it. That was a problem with the build setup, not with this change.
+
 ### 2026-11-11 — CI's apt step can no longer hang for 25 minutes (Claude Opus 5.5)
 
 **What the maintainer asked for:** "Why does CI for yapocis-rs take so long?", then "2 and 3": merge PR #20 past its failed build job, and fix the workflow in its own PR.

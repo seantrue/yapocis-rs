@@ -152,6 +152,73 @@ fn hsi_and_colormath_per_pixel_sizes() {
     }
 }
 
+/// Yapocis3 #66: `xyz2xyY` of a pixel whose `X + Y + Z` is zero (black, or a
+/// zero sum with mixed signs) gives chromaticity (0, 0), through an explicit
+/// `sum != 0` check, and keeps Y. Before the fix it was NaN (0/0) or ±inf.
+#[test]
+fn xyz2xyy_of_a_zero_sum_is_zero() {
+    let pixels = [
+        [0.0f32, 0.0, 0.0],
+        [-0.0, -0.0, -0.0],
+        [0.5, -0.5, 0.0],
+        [0.2, 0.3, 0.5],
+    ];
+    let input = Array2::from_shape_fn((pixels.len(), 3), |(i, c)| pixels[i][c]).into_dyn();
+    let mut wrong = Vec::new();
+    for device in devices() {
+        let out = Colormath::load(&device)
+            .unwrap()
+            .xyz2xyy(&input.view())
+            .unwrap();
+        for (i, p) in pixels.iter().take(3).enumerate() {
+            let got = [out[[i, 0]], out[[i, 1]], out[[i, 2]]];
+            if got.map(f32::to_bits) != [0.0, 0.0, p[1]].map(f32::to_bits) {
+                wrong.push(format!("{device:?} {p:?} -> {got:?}"));
+            }
+        }
+        // An ordinary pixel still divides by its sum.
+        let sum = 0.2f32 + 0.3 + 0.5;
+        for (c, want) in [0.2 / sum, 0.3 / sum, 0.3].into_iter().enumerate() {
+            let got = out[[3, c]];
+            assert!(
+                (got - want).abs() <= 1e-6,
+                "{device:?} channel {c}: {got} vs {want}"
+            );
+        }
+    }
+    assert!(
+        wrong.is_empty(),
+        "zero sums not mapped to (0, 0, Y):\n{}",
+        wrong.join("\n")
+    );
+}
+
+/// `xyY2xyz` with y == 0 (either sign) gives (0, 0, 0), Y included, on every
+/// backend; Yapocis3's numbax was changed to match (D4.6-7).
+#[test]
+fn xyy2xyz_with_zero_y_is_zero() {
+    let pixels = [[0.3f32, 0.0, 0.5], [0.3, -0.0, 0.5], [0.0, 0.0, 0.0]];
+    let input = Array2::from_shape_fn((pixels.len(), 3), |(i, c)| pixels[i][c]).into_dyn();
+    let mut wrong = Vec::new();
+    for device in devices() {
+        let out = Colormath::load(&device)
+            .unwrap()
+            .xyy2xyz(&input.view())
+            .unwrap();
+        for (i, p) in pixels.iter().enumerate() {
+            let got = [out[[i, 0]], out[[i, 1]], out[[i, 2]]];
+            if got.map(f32::to_bits) != [0u32; 3] {
+                wrong.push(format!("{device:?} {p:?} -> {got:?}"));
+            }
+        }
+    }
+    assert!(
+        wrong.is_empty(),
+        "y == 0 not mapped to (0, 0, 0):\n{}",
+        wrong.join("\n")
+    );
+}
+
 #[test]
 fn fft_roundtrip_and_peak() {
     for device in devices() {
