@@ -32,6 +32,20 @@ pub struct CudaDevice {
 
 impl CudaDevice {
     pub fn open(selector: Option<&str>) -> Result<CudaDevice> {
+        // cudarc loads the driver and NVRTC on first use and panics when either isn't there, so a
+        // machine with no NVIDIA driver would panic here rather than let `Device::default` (or
+        // an application) go on to the next backend.
+        // SAFETY: each only tries to load the library with libloading; nothing is called.
+        if !unsafe { cudarc::driver::sys::is_culib_present() } {
+            return Err(Error::backend(
+                B,
+                "driver",
+                "no CUDA driver library (libcuda) found",
+            ));
+        }
+        if !unsafe { cudarc::nvrtc::sys::is_culib_present() } {
+            return Err(Error::backend(B, "nvrtc", "no NVRTC library found"));
+        }
         let count = CudaContext::device_count().map_err(|e| err("device_count", e))? as usize;
         let mut names = Vec::with_capacity(count);
         for i in 0..count {
@@ -330,5 +344,18 @@ impl RawDevice for CudaDevice {
 
     fn wait_all(&self) -> Result<()> {
         self.stream.synchronize().map_err(|e| err("synchronize", e))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Where there is no NVIDIA driver (a Mac, a Linux box without one) opening is an error the
+    /// caller can pass over, not a panic; where there is one it opens or says why.
+    #[test]
+    fn opening_without_a_driver_is_an_error_not_a_panic() {
+        let opened = std::panic::catch_unwind(|| CudaDevice::open(None).map(|d| d.name));
+        assert!(opened.is_ok(), "CudaDevice::open panicked");
     }
 }
