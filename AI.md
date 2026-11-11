@@ -17,6 +17,14 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-11 — CI's apt step can no longer hang for 25 minutes (Claude Opus 5.5)
+
+**What the maintainer asked for:** "Why does CI for yapocis-rs take so long?", then "2 and 3": merge PR #20 past its failed build job, and fix the workflow in its own PR.
+
+**Cause (AI, from the run log):** PR #20's `build` job failed after 26 minutes, and its re-run hung on the same step: the hosted runner could not resolve `security.ubuntu.com`, and `apt-get install ocl-icd-opencl-dev` retried for about 20 minutes before failing with exit 100. Cargo never ran. Runs on main normally take 1 to 3 minutes.
+
+**Change:** `.github/workflows/ci.yml` (~7 LOC): the install step has a 5-minute `timeout-minutes`, and apt runs with 3 retries and 20-second HTTP timeouts. This bounds the wait; it does not make the job pass during a mirror outage, which still needs a re-run.
+
 ### 2026-11-11 — CUDA's open is an error, not a panic, where there is no NVIDIA driver (Claude Opus 5.5)
 
 **What the maintainer asked for.** PlumImpress B7: "deploy on Cuda by preferences over OpenCL". PlumImpress now tries CUDA first off the Mac, so a Linux machine with no NVIDIA driver must fall back to OpenCL, not lose its engine.
