@@ -53,6 +53,45 @@ fn custom_weights_match_cpu_and_bundled_variant() {
     }
 }
 
+/// Yapocis3 #80: `_fast(a, chunk)` computes `chunk` outputs per work item,
+/// each exactly as the main kernel does, for any global size of at least
+/// `ceil(len / chunk)`. The old templates (and the CPU port that copied them)
+/// left most outputs unwritten and read `a[j]` for every weight.
+#[test]
+fn fast_variant_matches_the_main_kernel() {
+    let k5 = [1.0, 0.0, -1.0, 0.0, 2.0];
+    let box3 = [0.3333333333, 0.3333333333, 0.3333333333];
+    let cases: [(&[f64], usize, i32); 7] = [
+        (&box3, 1001, 64),
+        (&box3, 1001, 1),
+        (&box3, 1001, 7),
+        (&box3, 1001, 0), // a chunk below 1 counts as 1
+        (&box3, 50, 64),  // chunk > width: one work item does everything
+        (&k5, 4096, 64),
+        (&k5, 1000, 7),
+    ];
+    for device in common::devices() {
+        for (n, (w, len, chunk)) in cases.iter().enumerate() {
+            let signal: Vec<f32> = (0..*len)
+                .map(|i| ((i * 7) % 13) as f32 / 13.0 - 0.5)
+                .collect();
+            let a = Array1::from_vec(signal).into_dyn();
+            let cnv = Convolve1D::new(&device, &format!("fast{n}"), w).unwrap();
+            let main = cnv.convolve(&a.view()).unwrap();
+            let per = (*chunk).max(1) as usize;
+            for global in [len.div_ceil(per), *len] {
+                let fast = cnv.convolve_fast(&a.view(), *chunk, global).unwrap();
+                assert_eq!(
+                    fast,
+                    main,
+                    "{device:?}: taps {} len {len} chunk {chunk} global {global}",
+                    w.len()
+                );
+            }
+        }
+    }
+}
+
 #[test]
 fn gaussian_with_default_ladder_equals_bundled() {
     for device in common::devices() {

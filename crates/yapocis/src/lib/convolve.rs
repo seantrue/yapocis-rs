@@ -53,7 +53,6 @@ fn backend_source(
 pub fn convolve_source(backend: Backend, name: &str, weights: &[f64]) -> Result<String> {
     let bundled = backend_source(backend, convolve_box3::source)?;
     let left = weights.len() / 2;
-    let n = weights.len();
     let lit: Vec<String> = weights.iter().map(|w| weight_literal(*w)).collect();
     let mut s = String::new();
     match backend {
@@ -70,12 +69,15 @@ pub fn convolve_source(backend: Backend, name: &str, weights: &[f64]) -> Result<
             }
             s.push_str("    }\n    ret[i] = sum;\n    return;\n}\n\n");
             s.push_str(&format!(
-                "__kernel void {name}_fast(int width,  __global float* a, __global float* ret, int chunk)\n{{\n    size_t i = get_global_id(0) * chunk;\n    float sum;\n    size_t right = width-{left};\n    volatile __local float buffer[FAST];\n    for (int j = 0; j < {n}; j++) {{\n        buffer[j] = i+j >= width ? 0.0 : a[i+j];\n    }}\n    for (int j = 0; j < chunk-{n}; j++) {{\n        sum = 0.0;\n        int ipixel = i+j >= right ? right-1 : i+j;\n        if ((i > (size_t){left}) &&  (i < right)) {{\n"
+                "/* Work item g computes ret[g*chunk .. g*chunk+chunk-1], each pixel exactly as {name}\n   computes it, and stops at width. Needs a global size of at least ceil(width/chunk). */\n__kernel void {name}_fast(int width,  __global float* a, __global float* ret, int chunk)\n{{\n    int n = chunk > 0 ? chunk : 1;\n    size_t right = width-{left};\n    size_t start = get_global_id(0) * (size_t)n;\n    for (int j = 0; j < n; j++) {{\n        size_t i = start + (size_t)j;\n        if (i >= (size_t)width) return;\n        float sum = 0.0;\n        if ((i > (size_t){left}) &&  (i < right)) {{\n"
             ));
-            for l in &lit {
-                s.push_str(&format!("           sum = sum + a[j] * {l};\n"));
+            for (k, l) in lit.iter().enumerate() {
+                s.push_str(&format!(
+                    "           sum = sum + a[i+({})] * {l};\n",
+                    k as i64 - left as i64
+                ));
             }
-            s.push_str("        }\n        ret[ipixel] = sum;\n    }\n    return;\n}\n");
+            s.push_str("        }\n        ret[i] = sum;\n    }\n    return;\n}\n");
         }
         Backend::Metal => {
             s.push_str(prologue(bundled, &["kernel void box3("]));
@@ -90,12 +92,15 @@ pub fn convolve_source(backend: Backend, name: &str, weights: &[f64]) -> Result<
             }
             s.push_str("    }\n    ret[i] = sum;\n}\n\n");
             s.push_str(&format!(
-                "kernel void {name}_fast(constant int &width [[ buffer(0) ]],\n                         device float* a [[ buffer(1) ]],\n                         device float* ret [[ buffer(2) ]],\n                         constant int &chunk [[ buffer(3) ]],\n                         uint i [[ thread_position_in_grid ]])\n{{\n    size_t idx = i * (size_t)chunk;\n    float sum = 0.0f;\n    size_t right = width-{left};\n    threadgroup float buffer[FAST];\n    for (int j = 0; j < {n}; j++) {{\n        buffer[j] = idx+j >= (size_t)width ? 0.0f : a[idx+j];\n    }}\n    for (int j = 0; j < chunk-{n}; j++) {{\n        sum = 0.0f;\n        size_t ipixel = idx+j >= right ? (right-1) : (idx+j);\n        if ((idx > (size_t){left}) &&  (idx < right)) {{\n"
+                "/* Thread g computes ret[g*chunk .. g*chunk+chunk-1], each pixel exactly as {name}\n   computes it, and stops at width. Needs a global size of at least ceil(width/chunk);\n   a larger one (the default, one thread per element) is correct but idles. */\nkernel void {name}_fast(constant int &width [[ buffer(0) ]],\n                         device float* a [[ buffer(1) ]],\n                         device float* ret [[ buffer(2) ]],\n                         constant int &chunk [[ buffer(3) ]],\n                         uint g [[ thread_position_in_grid ]])\n{{\n    int n = chunk > 0 ? chunk : 1;\n    size_t right = width-{left};\n    size_t start = (size_t)g * (size_t)n;\n    for (int j = 0; j < n; j++) {{\n        size_t i = start + (size_t)j;\n        if (i >= (size_t)width) return;\n        float sum = 0.0f;\n        if ((i > (size_t){left}) &&  (i < right)) {{\n"
             ));
             for (k, l) in lit.iter().enumerate() {
-                s.push_str(&format!("            sum = sum + buffer[{k}] * {l};\n"));
+                s.push_str(&format!(
+                    "            sum = sum + a[i+({})] * {l};\n",
+                    k as i64 - left as i64
+                ));
             }
-            s.push_str("        }\n        ret[ipixel] = sum;\n    }\n}\n");
+            s.push_str("        }\n        ret[i] = sum;\n    }\n}\n");
         }
         Backend::Cuda => {
             s.push_str(prologue(bundled, &["extern \"C\" __kernel\nvoid box3("]));
@@ -110,12 +115,15 @@ pub fn convolve_source(backend: Backend, name: &str, weights: &[f64]) -> Result<
             }
             s.push_str("    }\n    ret[i] = sum;\n    return;\n}\n\n");
             s.push_str(&format!(
-                "extern \"C\" __kernel void {name}_fast(int width,  float* a, float* ret, int chunk)\n{{\n    size_t i = get_global_id(0) * chunk;\n    float sum;\n    size_t right = width-{left};\n    volatile __local float buffer[FAST];\n    for (int j = 0; j < {n}; j++) {{\n        buffer[j] = i+j >= width ? 0.0 : a[i+j];\n    }}\n    for (int j = 0; j < chunk-{n}; j++) {{\n        sum = 0.0;\n        int ipixel = i+j >= right ? right-1 : i+j;\n        if ((i > (size_t){left}) &&  (i < right)) {{\n"
+                "/* Work item g computes ret[g*chunk .. g*chunk+chunk-1], each pixel exactly as {name}\n   computes it, and stops at width. Needs a global size of at least ceil(width/chunk). */\nextern \"C\" __kernel void {name}_fast(int width,  float* a, float* ret, int chunk)\n{{\n    int n = chunk > 0 ? chunk : 1;\n    size_t right = width-{left};\n    size_t start = (size_t)get_global_id(0) * (size_t)n;\n    for (int j = 0; j < n; j++) {{\n        size_t i = start + (size_t)j;\n        if (i >= (size_t)width) return;\n        float sum = 0.0;\n        if ((i > (size_t){left}) &&  (i < right)) {{\n"
             ));
-            for l in &lit {
-                s.push_str(&format!("           sum = sum + a[j] * {l};\n"));
+            for (k, l) in lit.iter().enumerate() {
+                s.push_str(&format!(
+                    "           sum = sum + a[i+({})] * {l};\n",
+                    k as i64 - left as i64
+                ));
             }
-            s.push_str("        }\n        ret[ipixel] = sum;\n    }\n    return;\n}\n");
+            s.push_str("        }\n        ret[i] = sum;\n    }\n    return;\n}\n");
         }
     }
     Ok(s)
@@ -296,8 +304,10 @@ impl Convolve1D {
         )
     }
 
-    /// `cnv.<name>_fast(a, chunk)`: the chunked variant. The caller passes the
-    /// global size Python callers pass (`len / chunk` threads).
+    /// `cnv.<name>_fast(a, chunk)`: the chunked variant, which gives the same
+    /// output as `convolve`; each work item computes `chunk` consecutive outputs
+    /// (a `chunk` below 1 counts as 1). Any `global` of at least
+    /// `ceil(len / chunk)` is correct (Yapocis3 #80).
     pub fn convolve_fast(
         &self,
         a: &ArrayViewD<'_, f32>,
