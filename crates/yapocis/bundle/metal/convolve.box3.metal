@@ -43,7 +43,6 @@ static inline void atomic_inc(device atomic_int* p) {
 
 
 
-#define FAST 1000
 
 kernel void box3(constant int &width [[ buffer(0) ]],
                     device float* a [[ buffer(1) ]],
@@ -60,27 +59,27 @@ kernel void box3(constant int &width [[ buffer(0) ]],
     ret[i] = sum;
 }
 
+/* Thread g computes ret[g*chunk .. g*chunk+chunk-1], each pixel exactly as box3
+   computes it, and stops at width. Needs a global size of at least ceil(width/chunk);
+   a larger one (the default, one thread per element) is correct but idles. */
 kernel void box3_fast(constant int &width [[ buffer(0) ]],
                          device float* a [[ buffer(1) ]],
                          device float* ret [[ buffer(2) ]],
                          constant int &chunk [[ buffer(3) ]],
-                         uint i [[ thread_position_in_grid ]])
+                         uint g [[ thread_position_in_grid ]])
 {
-    size_t idx = i * (size_t)chunk;
-    float sum = 0.0f;
+    int n = chunk > 0 ? chunk : 1;
     size_t right = width-1;
-    threadgroup float buffer[FAST];
-    for (int j = 0; j < 3; j++) {
-        buffer[j] = idx+j >= (size_t)width ? 0.0f : a[idx+j];
-    }
-    for (int j = 0; j < chunk-3; j++) {
-        sum = 0.0f;
-        size_t ipixel = idx+j >= right ? (right-1) : (idx+j);
-        if ((idx > (size_t)1) &&  (idx < right)) {
-            sum = sum + buffer[0] * 0.3333333333;
-            sum = sum + buffer[1] * 0.3333333333;
-            sum = sum + buffer[2] * 0.3333333333;
+    size_t start = (size_t)g * (size_t)n;
+    for (int j = 0; j < n; j++) {
+        size_t i = start + (size_t)j;
+        if (i >= (size_t)width) return;
+        float sum = 0.0f;
+        if ((i > (size_t)1) &&  (i < right)) {
+            sum = sum + a[i+(-1)] * 0.3333333333;
+            sum = sum + a[i+(0)] * 0.3333333333;
+            sum = sum + a[i+(1)] * 0.3333333333;
         }
-        ret[ipixel] = sum;
+        ret[i] = sum;
     }
 }

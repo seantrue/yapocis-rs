@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "yapocis_version": "1.0.0",
+  "yapocis_version": "1.1.0",
   "backends": [
     "ocl",
     "metal",
@@ -6022,7 +6022,7 @@
       "sources": {
         "ocl": {
           "path": "ocl/convolve.box3.cl",
-          "sha256": "41db1cb1595b0cc3e35684a564a87f289705e7aafc57a53ea66e90e77893fb35",
+          "sha256": "b875d43346e251f7fde8ad662976bc39b2c45fae9b75525fc58aade925a95192",
           "build_options": [
             "-w",
             "-cl-fast-relaxed-math",
@@ -6033,12 +6033,12 @@
         },
         "metal": {
           "path": "metal/convolve.box3.metal",
-          "sha256": "af5c76650fb922be771a06e5105d430e0101c2ebcce268fdd3a1dc2140b56d4d",
+          "sha256": "21cad44e0548fb403ae3b5a7ecd01e142a66b45c99cafe54a2c295e37e06ac49",
           "build_options": []
         },
         "cuda": {
           "path": "cuda/convolve.box3.cu",
-          "sha256": "2c0662a1bc0b7c7a2d434251f1d6f33e287e3f741839ab936b4a42e61042ac7e",
+          "sha256": "30f4b20998fee74d97b7168bfb33f0f8374506570af498f7932c183dc7cfe2d6",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",
@@ -6171,7 +6171,7 @@
       "sources": {
         "ocl": {
           "path": "ocl/convolve.box5.cl",
-          "sha256": "dfb9581fc1aaecc9ce96b8dc41fd3432254238c574bf3abee51615903de6e29b",
+          "sha256": "1c6a17e646cd663fc07bad9d86bd5813154c0958f4352641bc1bf98b07f90881",
           "build_options": [
             "-w",
             "-cl-fast-relaxed-math",
@@ -6182,12 +6182,12 @@
         },
         "metal": {
           "path": "metal/convolve.box5.metal",
-          "sha256": "5853085d63b720c602aa7b7927a2e4106c037ad78beba62543982180ea2fcecc",
+          "sha256": "4ba629d8039737d110ba05c719ac209ecf4501510233454776635363f21603ab",
           "build_options": []
         },
         "cuda": {
           "path": "cuda/convolve.box5.cu",
-          "sha256": "759d9debd37ce788a1709359a3e5a53efa618659621287d41e6562282484d832",
+          "sha256": "4be183d7fdbdd5b581a4021b560e21404c06c84a7a7e38e3fdba6cab458367ed",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",
@@ -6322,7 +6322,7 @@
       "sources": {
         "ocl": {
           "path": "ocl/convolve.edge3.cl",
-          "sha256": "2d4e00611e60656fb1309a9acf685709dfcd0f00c0947f40930dede284bdbb36",
+          "sha256": "469cf9bc4b34d2ce23c4c203baf26f6f6702849c38dfd4e19474a8931244588b",
           "build_options": [
             "-w",
             "-cl-fast-relaxed-math",
@@ -6333,12 +6333,12 @@
         },
         "metal": {
           "path": "metal/convolve.edge3.metal",
-          "sha256": "1b2ef92dec99339256f528b6f09b0936085d4c1d8d9a78766512fc7e633f8380",
+          "sha256": "6b3d58a4cea2e0ccc15c9e90782e58fbb31d0c3cf079c1c620941f9ddc32ed7b",
           "build_options": []
         },
         "cuda": {
           "path": "cuda/convolve.edge3.cu",
-          "sha256": "c3730f8855483bbdf31722a9b58d2f0b5cefbd1c5c8a8436f07af9fb8c214973",
+          "sha256": "9b217a24482f65124421c9c0447784a23c7c9fbaa922287eed28b0a5b774c09f",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",
@@ -6471,7 +6471,7 @@
       "sources": {
         "ocl": {
           "path": "ocl/convolve.binomial5.cl",
-          "sha256": "8e31db0aba16be1dd41cbff861ee90f2909321e133971a0d7940f0ace3206159",
+          "sha256": "ea5f5df499a921ef3235a45d07375b7b284cee785cbb70ee18a7b1f64a2144c5",
           "build_options": [
             "-w",
             "-cl-fast-relaxed-math",
@@ -6482,12 +6482,12 @@
         },
         "metal": {
           "path": "metal/convolve.binomial5.metal",
-          "sha256": "11c4fc696e4470587fa7b4b2d679de4018d333e5f32ba4dbe2ecf73b6ea66a21",
+          "sha256": "8724ec051e5857ce29bba91b058f3d5d9da9c67aab752d176e5e735356af77ef",
           "build_options": []
         },
         "cuda": {
           "path": "cuda/convolve.binomial5.cu",
-          "sha256": "6a3d17cc2c9270e9de4ca61bdce961edf5f88f1ed559c57c5ad4ad08baa2d7b2",
+          "sha256": "1421703f670ded6142f429939ea4299e2900c253dedf9be70ff32930e68c9785",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",

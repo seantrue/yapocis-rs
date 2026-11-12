@@ -70,7 +70,7 @@ pub fn one_dimensional(source: &str) -> Result<Vec<(String, super::Kernel)>, Str
     let mut out: Vec<(String, super::Kernel)> = Vec::new();
     for (name, weights) in &parsed {
         if let Some(base) = name.strip_suffix("_fast") {
-            // The _fast body repeats its base kernel's weights, as `a[j] * w`.
+            // The _fast body repeats its base kernel's weights.
             let w = weights_of(base)?;
             out.push((name.clone(), Box::new(move |a: &Args| convolve_fast(a, &w))));
         } else {
@@ -103,29 +103,29 @@ fn convolve(args: &Args, weights: &[f64]) {
 }
 
 /// `NAME_fast(int width, float* a, float* ret, int chunk)`: work item `g`
-/// covers `chunk - n` pixels from `g * chunk`. As rendered, it multiplies
-/// `a[j]` (not `a[i + j]`) by every weight, and clamps its write index to
-/// `right - 1`, so neighbouring work items write the same pixel; they run in
-/// order here.
+/// computes `ret[g*chunk .. g*chunk+chunk-1]`, each pixel exactly as `NAME`
+/// does, and stops at `width`; a `chunk` below 1 counts as 1 (Yapocis3 #80).
+/// Any global size of at least `ceil(width / chunk)` covers every pixel.
 fn convolve_fast(args: &Args, weights: &[f64]) {
     let width = args.int(0) as i64;
     let a = args.input::<f32>(1);
     let mut ret = args.output::<f32>(2);
-    let chunk = args.int(3) as i64;
-    let n = weights.len() as i64;
-    let left = n / 2;
+    let n = (args.int(3) as i64).max(1);
+    let left = (weights.len() / 2) as i64;
     let right = width - left;
     for g in 0..args.global_size() as i64 {
-        let i = g * chunk;
-        for j in 0..(chunk - n).max(0) {
-            let ipixel = if i + j >= right { right - 1 } else { i + j };
+        for j in 0..n {
+            let i = g * n + j;
+            if i >= width {
+                break;
+            }
             let mut sum = 0f32;
             if i > left && i < right {
-                for &w in weights {
-                    sum = step(sum, a[j as usize], w);
+                for (k, &w) in weights.iter().enumerate() {
+                    sum = step(sum, a[(i + k as i64 - left) as usize], w);
                 }
             }
-            ret[ipixel as usize] = sum;
+            ret[i as usize] = sum;
         }
     }
 }

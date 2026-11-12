@@ -261,7 +261,6 @@ static __device__ __inline__ float length(float2 v) {
 /* One dimensional convolution with a kernel conv that is determined at compile time */
 
 
-#define FAST 1000
 extern "C" __kernel
 void edge3(int width,  float* a, float* ret )
 {
@@ -279,24 +278,23 @@ void edge3(int width,  float* a, float* ret )
     return;
 }
 
+/* Work item g computes ret[g*chunk .. g*chunk+chunk-1], each pixel exactly as edge3
+   computes it, and stops at width. Needs a global size of at least ceil(width/chunk). */
 extern "C" __kernel void edge3_fast(int width,  float* a, float* ret, int chunk)
 {
-    size_t i = get_global_id(0) * chunk;
-    float sum;
+    int n = chunk > 0 ? chunk : 1;
     size_t right = width-1;
-    volatile __local float buffer[FAST];
-    for (int j = 0; j < 3; j++) {
-        buffer[j] = i+j >= width ? 0.0 : a[i+j];
-    }
-    for (int j = 0; j < chunk-3; j++) {
-        sum = 0.0;
-        int ipixel = i+j >= right ? right-1 : i+j;
+    size_t start = (size_t)get_global_id(0) * (size_t)n;
+    for (int j = 0; j < n; j++) {
+        size_t i = start + (size_t)j;
+        if (i >= (size_t)width) return;
+        float sum = 0.0;
         if ((i > (size_t)1) &&  (i < right)) {
-           sum = sum + a[j] * -1.0;
-           sum = sum + a[j] * 0.0;
-           sum = sum + a[j] * 1.0;
+           sum = sum + a[i+(-1)] * -1.0;
+           sum = sum + a[i+(0)] * 0.0;
+           sum = sum + a[i+(1)] * 1.0;
         }
-        ret[ipixel] = sum;
+        ret[i] = sum;
     }
     return;
 }

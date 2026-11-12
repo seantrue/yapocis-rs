@@ -17,6 +17,21 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-11 — `convolve_fast` computes every output, and the bundle from Yapocis3 bf9a0b8 (Claude Opus 5.5)
+
+**What the maintainer asked for.** Yapocis3 #80: the GPU `_fast` convolve kernels returned partial output, and the maintainer chose "Fix it" (plum `docs/QUEUE.md` D7.6). Yapocis3 fixed its templates first (PR #98, merged as `bf9a0b8`); this repository follows, with no downstream pin moves (D7.8). Steps 6–8 approved with CPM (D9.6).
+
+**What the AI did.**
+- The bundle re-exported with `yapocis-tools bundle --fixtures` from a fresh scratch venv with Yapocis3 installed from git at `bf9a0b8` (yapocis 1.1.0), not from the maintainer's `.venv`, whose stale metadata said 1.0.0. The diff is exactly the expected one: the `_fast` kernels in the 12 `convolve.*` sources (ocl, metal, cuda × box3, box5, edge3, binomial5), their 12 sha256 entries in `manifest.json`, `yapocis_version` 1.0.0 → 1.1.0, and `SOURCE`. `fixtures/derivation.json` didn't change. `scripts/check-bundle.sh` passes locally.
+- `crates/yapocis/src/lib/convolve.rs` (~24 LOC): `convolve_source`'s `_fast` text for OpenCL/rustcpu, Metal and CUDA follows the new templates (work item `g` computes `ret[g*chunk .. g*chunk+chunk-1]` with the main kernel's expression, a `chunk` below 1 counts as 1, no shared buffer, no clamp), so `generated_box3_matches_bundled_text` passes on the new bundle; `convolve_fast`'s doc comment says what it computes.
+- `crates/yapocis-rt/src/cpu/kernels/convolve.rs` (~14 LOC): the CPU `convolve_fast` port, which copied the old template's `a[j]` and unwritten outputs on purpose, now computes `convolve` for each of its `chunk` pixels and stops at `width`.
+- `crates/yapocis/tests/convolve.rs` (~39 LOC): `fast_variant_matches_the_main_kernel`, on every device that opens: box3 and a 5-tap kernel, `chunk` 64, 1, 7, 0 and `chunk > width`, lengths not a multiple of the chunk, each with `global = ceil(len/chunk)` and `global = len`; `_fast` must equal `convolve` exactly. On rustcpu it failed with the old ports and passes with the new ones.
+- No parity fixture was re-recorded: the parity cases skip `_fast`.
+
+**Checked** (M4 Max). `cargo fmt --all --check`; clippy `-D warnings` with `yapocis/ocl,yapocis/metal`, and on `bindings/python`; `cargo test --locked --release --features yapocis/ocl,yapocis/metal`: 130 passed, 0 failed; `cargo test --locked -p yapocis-bundle -p npexact`: 38 passed; `cargo test --locked --release -p yapocis --features rustcpu`: 75 passed. CUDA wasn't run here; Yapocis3's CUDA `_fast` was compiled and tested on yellowfin's RTX 3080 for #98, and `convolve_source`'s CUDA text has the same tokens as that bundled source.
+
+**Division of labor:** the maintainer decided the fix and approved the steps; the plum planner wrote the plan; Claude re-exported the bundle, ported the text and the CPU kernel, and wrote the test and this entry.
+
 ### 2026-11-11 — `xyz2xyY` of a zero sum is (0, 0, Y), and the bundle from Yapocis3 8828079 (Claude Opus 5.5)
 
 **What the maintainer asked for.** Yapocis3 #66: the xyY of black was NaN on the GPU backends and rustcpu, and 0 on numbax. The maintainer chose "Z . With check. Patch. Yapocis first. Accept 0": black gives 0 on every backend, through an explicit `sum != 0` check rather than an epsilon; Yapocis3 first, then this repository; and a zero sum with mixed signs gives 0 too. Yapocis3 merged its half as PR #85 (`8828079`). The maintainer then said "go for 1" for this step.
