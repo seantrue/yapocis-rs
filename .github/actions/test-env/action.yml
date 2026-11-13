@@ -1,0 +1,66 @@
+# One setup for the test suites of plumcraft, plumimpress, yapocis-rs, Yapocis3, yapocis-external,
+# impressionist-rs and Virtual-Impressionist on a GitHub-hosted Ubuntu runner: the same system
+# packages and tools as the Claude Code cloud environment's setup script.
+#
+#   - uses: seantrue/yapocis-rs/.github/actions/test-env@main
+#     with: { python: "false" }
+name: test-env
+description: System packages, Rust and Python tooling for the yapocis family's test suites
+inputs:
+  rust:
+    description: Install Rust (stable, clippy, rustfmt), the build cache and cargo-nextest
+    default: "true"
+  rust-cache-workspaces:
+    description: Passed to Swatinem/rust-cache (e.g. "bindings/python" or "a -> target")
+    default: ""
+  python:
+    description: Install uv (with its cache) and maturin
+    default: "true"
+runs:
+  using: composite
+  steps:
+    # plumcraft: ALSA headers (cpal) and Mesa's software Vulkan (lavapipe) for the rendering kittests.
+    # yapocis-rs: OpenCL headers (opencl3 links libOpenCL at build time).
+    # impressionist-rs: OpenBLAS (vimp links it).
+    # Python repos: PoCL, a CPU OpenCL device for tests without a GPU.
+    # Cached: Ubuntu's mirrors sometimes take minutes to answer.
+    - uses: awalsh128/cache-apt-pkgs-action@v1
+      with:
+        packages: pkg-config libasound2-dev mesa-vulkan-drivers libvulkan1 ocl-icd-opencl-dev libopenblas-dev pocl-opencl-icd
+        version: 2
+
+    - if: inputs.rust == 'true'
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy, rustfmt
+    - if: inputs.rust == 'true'
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: ${{ inputs.rust-cache-workspaces }}
+    - if: inputs.rust == 'true'
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-nextest
+
+    - if: inputs.python == 'true'
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+        cache-dependency-glob: "**/uv.lock"
+    - if: inputs.python == 'true'
+      shell: bash
+      run: uv tool install maturin
+
+    # No debug info and no incremental state: a test build with debug info filled 25 GB of
+    # target/ in plumcraft, which a hosted runner doesn't have. commonkit's store declines to
+    # publish under 8 GB free, which a runner rarely has after a build.
+    - shell: bash
+      run: |
+        {
+          echo "CARGO_TERM_COLOR=always"
+          echo "CARGO_PROFILE_DEV_DEBUG=0"
+          echo "CARGO_PROFILE_TEST_DEBUG=0"
+          echo "CARGO_PROFILE_RELEASE_DEBUG=0"
+          echo "CARGO_INCREMENTAL=0"
+          echo "COMMONKIT_STORE_MIN_FREE_GB=2"
+        } >> "$GITHUB_ENV"

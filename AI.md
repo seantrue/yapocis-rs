@@ -36,6 +36,8 @@ Later direction and corrections are credited in the entries below.
 
 **Follow-up (same day).** The skill now also lives in plumimpress, yapocis-external and Virtual-Impressionist; SKILL.md lists all seven repos and adds the yapocis-external → impressionist-rs rule (re-export the bundle, port the CPU kernel, run impressionist-rs's tier 0). SKILL.md and affected.py stay identical in all seven.
 
+**CI (same day).** `.github/actions/test-env/action.yml`, a composite action with the cloud environment's setup for a GitHub-hosted runner: the apt packages (cached), Rust with clippy, rustfmt, rust-cache and cargo-nextest, uv and maturin, and `CARGO_PROFILE_*_DEBUG=0`, `CARGO_INCREMENTAL=0`, `COMMONKIT_STORE_MIN_FREE_GB=2`. It lives here because yapocis-rs is public, so every repo's CI can use it. This repo's `build` and `rustcpu` jobs use it in place of their own toolchain and apt steps; their commands are unchanged. `workflow_dispatch` added.
+
 ### 2026-11-12 — The program-cache key goes through commonkit's hash facade (Claude Opus 5.5)
 
 **What the maintainer asked for.** Layer 1 of plum's plan `2026-11-12-commonkit-hash-facade.md` (§3.2), which the maintainer approved with the rest of the coordinated move ("REALLY,REALLY,REALLY try not to use system libraries directly if they are implementations of swappable algorithms. Hashing is a clear one", D19). commonkit 0.2.0 is released; this repository uses it from crates.io.
