@@ -142,7 +142,7 @@ const STALE_CPU_FIXTURES: &[(&str, &str, &str)] = &[(
 )];
 
 fn stale(backend: Backend, dir: &std::path::Path, file: &str) -> Option<&'static str> {
-    use sha2::{Digest, Sha256};
+    use commonkit::digest::fixed::{self, Fixed};
     if backend != Backend::RustCpu {
         return None;
     }
@@ -153,7 +153,7 @@ fn stale(backend: Backend, dir: &std::path::Path, file: &str) -> Option<&'static
     let (_, sha, why) = STALE_CPU_FIXTURES
         .iter()
         .find(|(f, _, _)| std::path::Path::new(f) == rel)?;
-    let digest = format!("{:x}", Sha256::digest(std::fs::read(&path).ok()?));
+    let digest = fixed::raw(Fixed::Sha256, &std::fs::read(&path).ok()?);
     (digest == *sha).then_some(*why)
 }
 

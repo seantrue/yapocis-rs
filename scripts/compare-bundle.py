@@ -55,6 +55,7 @@ def check_vendored_hashes(vendored: Path) -> int:
     pairs = list(source_hashes(json.loads((vendored / "manifest.json").read_text())))
     for path, want in pairs:
         f = vendored / path
+        # Fixed SHA-256, the manifest format's (allowlisted in hash-allowlist.txt, D9).
         got = hashlib.sha256(f.read_bytes()).hexdigest() if f.is_file() else "missing"
         if got != want:
             print(f"bundle drift: manifest sha256 for {path} does not match the vendored file ({got})")
