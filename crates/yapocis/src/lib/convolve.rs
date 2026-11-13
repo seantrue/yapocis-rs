@@ -11,8 +11,8 @@
 use crate::interfaces::{convolve_box3, convolvesep};
 use crate::rt::{CallArg, CallOptions};
 use crate::{host, Backend, Device, Error, Program, Result};
+use commonkit::digest::fixed::{self, Fixed};
 use ndarray::{ArrayD, ArrayViewD};
-use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use yapocis_bundle::manifest::CudaInfo;
 use yapocis_bundle::{
@@ -222,7 +222,8 @@ fn sources_for(
             backend.name().to_string(),
             SourceEntry {
                 path: format!("generated/{}/{id}", backend.name()),
-                sha256: format!("{:x}", Sha256::digest(text.as_bytes())),
+                // The manifest format names SHA-256: fixed, not the switch (D9).
+                sha256: fixed::raw(Fixed::Sha256, text.as_bytes()),
                 build_options: bundled.build_options.clone(),
             },
         );

@@ -17,6 +17,20 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-12 — The program-cache key goes through commonkit's hash facade (Claude Opus 5.5)
+
+**What the maintainer asked for.** Layer 1 of plum's plan `2026-11-12-commonkit-hash-facade.md` (§3.2), which the maintainer approved with the rest of the coordinated move ("REALLY,REALLY,REALLY try not to use system libraries directly if they are implementations of swappable algorithms. Hashing is a clear one", D19). commonkit 0.2.0 is released; this repository uses it from crates.io.
+
+**What the AI did.**
+- `crates/yapocis-rt/src/cache.rs` (~4 LOC changed, ~29 LOC of tests): the compiled-program cache key is `commonkit::digest::Hasher::new()` over the same bytes, so it follows commonkit's switch (`HASH` in the tree's `.policy.json`, then `COMMONKIT_HASH`, then `b3`). Old SHA-256 entries become misses and recompile. Tests: `cache_key_is_the_current_algorithm` (the known MD5 or BLAKE3 of a fixed key; it failed against the SHA-256 key before the change) and `hash_is_what_was_asked` (`commonkit::testing::assert_isolated`).
+- `crates/yapocis/src/lib/convolve.rs` and `crates/yapocis/tests/parity.rs` (~5 LOC): the bundle manifest's SHA-256 is `digest::fixed::raw(Fixed::Sha256, …)`, a fixed format digest.
+- Manifests: `sha2` is gone; `commonkit = { version = "0.2", default-features = false, features = ["digest"] }` (~8 LOC); both lockfiles refreshed (`bindings/python/Cargo.lock` gains commonkit).
+- Gates (~47 LOC): `clippy.toml` bans the hash crates' types (`allow-invalid`), `hash-allowlist.txt` names the two fixed-SHA-256 uses (`convolve.rs`, `scripts/compare-bundle.py`, which gains a comment), and `scripts/check-hash-gates.sh` checks that hash crates appear only under commonkit, that `bindings/python` has exactly one commonkit 0.2, and that no non-test source names an algorithm. CI (~13 LOC) runs `yapocis-rt`'s tests under md5 and then b3 in fresh run folders, and the gate script.
+
+**Checked** (M4 Max, through plum's `hf2_env.py`, an isolated environment): see the PR body for the gate table. A planted `use sha2::Digest;` fails the gate script.
+
+**Division of labor:** the maintainer decided the design; the plum planner wrote the plan; Claude implemented it and wrote this entry.
+
 ### 2026-11-11 — `convolve_fast` computes every output, and the bundle from Yapocis3 bf9a0b8 (Claude Opus 5.5)
 
 **What the maintainer asked for.** Yapocis3 #80: the GPU `_fast` convolve kernels returned partial output, and the maintainer chose "Fix it" (plum `docs/QUEUE.md` D7.6). Yapocis3 fixed its templates first (PR #98, merged as `bf9a0b8`); this repository follows, with no downstream pin moves (D7.8). Steps 6–8 approved with CPM (D9.6).

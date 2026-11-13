@@ -22,7 +22,7 @@ rustcpu = ["dep:rayon"]
 yapocis-bundle = { path = "../yapocis-bundle", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true
-sha2.workspace = true
+commonkit.workspace = true
 dirs.workspace = true
 bytemuck.workspace = true
 num-complex.workspace = true
@@ -30,6 +30,9 @@ half.workspace = true
 opencl3 = { workspace = true, optional = true }
 rayon = { workspace = true, optional = true }
 cudarc = { workspace = true, optional = true, features = ["driver", "nvrtc", "dynamic-loading", "cuda-12050"] }
+
+[dev-dependencies]
+commonkit = { workspace = true, features = ["testing"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc = "0.2"

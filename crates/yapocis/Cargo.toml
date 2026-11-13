@@ -30,7 +30,7 @@ num-complex = { workspace = true }
 half = { workspace = true }
 thiserror.workspace = true
 serde_json.workspace = true
-sha2.workspace = true
+commonkit.workspace = true
 freetype-rs = { version = "0.38", optional = true, features = ["bundled"] }
 earcutr = "0.5"
 ndarray-npy.workspace = true

@@ -1,0 +1,6 @@
+# Files allowed to name a hash algorithm outside tests (the commonkit hash facade, D9/D10).
+# One path per line; each use carries a comment at the line.
+# The manifest format names SHA-256 (fixed, not the switch).
+crates/yapocis/src/lib/convolve.rs
+# The bundle drift check recomputes the manifest's SHA-256 entries (fixed, not the switch).
+scripts/compare-bundle.py
