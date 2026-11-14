@@ -23,11 +23,15 @@ runs:
     # yapocis-rs: OpenCL headers (opencl3 links libOpenCL at build time).
     # impressionist-rs: OpenBLAS (vimp links it).
     # Python repos: PoCL, a CPU OpenCL device for tests without a GPU.
-    # Cached: Ubuntu's mirrors sometimes take minutes to answer.
+    # Cached: Ubuntu's mirrors sometimes take minutes to answer. A restore copies the packages'
+    # files but runs no install scripts unless asked: libopenblas-dev's libopenblas.so is an
+    # update-alternatives link made by its postinst, so without them the linker can't find
+    # -lopenblas. The scripts are cached only from a fresh cache, hence the version bump.
     - uses: awalsh128/cache-apt-pkgs-action@v1
       with:
         packages: pkg-config libasound2-dev mesa-vulkan-drivers libvulkan1 ocl-icd-opencl-dev libopenblas-dev pocl-opencl-icd
-        version: 2
+        version: 3
+        execute_install_scripts: true
 
     - if: inputs.rust == 'true'
       uses: dtolnay/rust-toolchain@stable

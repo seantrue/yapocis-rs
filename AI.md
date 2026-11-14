@@ -17,6 +17,14 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-13 — test-env runs the apt packages' install scripts after a cache restore (Claude Opus 5.5)
+
+**What the maintainer asked for.** "yapocis-rs: yes" to the proposed fix, after impressionist-rs's first CI run failed to link.
+
+**What the AI did.** impressionist-rs's CI (PR #64 there) failed with `unable to find library -lopenblas`, on a run whose apt step was a cache hit. `awalsh128/cache-apt-pkgs-action` restores package files but runs no install scripts by default, and libopenblas-dev's `libopenblas.so` is an update-alternatives link made by its postinst. `.github/actions/test-env/action.yml` now sets `execute_install_scripts: true` and bumps the cache `version` to 3, since the scripts are cached only from a fresh cache (~6 lines). The cause is inferred from the log (cache hit, then the missing link), not confirmed on a runner; impressionist-rs's rerun is the check.
+
+**Defect in AI-written code.** The test-env action, written earlier the same day, cached apt packages without their install scripts; caught by impressionist-rs's CI.
+
 ### 2026-11-13 — test-affected: run the tests a change can reach, in tiers (Claude Opus 5.5)
 
 **What the maintainer asked for.** Test tooling for Claude Code across the Python and Rust repos, whose suites had grown to hours; then "Add to each repo".
