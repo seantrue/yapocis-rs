@@ -17,6 +17,29 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-13 — test-affected: run the tests a change can reach, in tiers (Claude Opus 5.5)
+
+**What the maintainer asked for.** Test tooling for Claude Code across the Python and Rust repos, whose suites had grown to hours; then "Add to each repo".
+
+**What the AI did.**
+- `.claude/skills/test-affected/` (SKILL.md, `affected.py`, ~300 lines of Python, stdlib only): maps `git diff` against `origin/main` to the tests that can see it, as one command per suite.
+  - Rust: the changed packages plus every workspace package that depends on them (normal, dev or build), from `cargo metadata`. A root `Cargo.toml`, `Cargo.lock`, toolchain or nextest config change selects everything.
+  - Python: test files that name a changed kernel, interface or module (`grep_stem`), or explicit `[[python.map]]` rules.
+  - Each run gets a fresh `COMMONKIT_TEST_RUN`/`STORE_ROOT`/`MARK_DIR`, as CI does, and md5 only (b3 again when hashing or the store changed).
+  - Tiers: 0 after each edit, 1 before a commit, 2 the repo's documented gate, run in the background.
+- The same SKILL.md and `affected.py` are in plumcraft, yapocis-rs, Yapocis3 and impressionist-rs; a change goes to all four.
+- Here: `.test-affected.toml` (tier 0 rustcpu, release; tiers 1 and 2 add `ocl`+`metal` on macOS and `cuda`+`ocl` on Linux; `pkg/feature` flags are dropped when their package isn't selected, since cargo refuses them otherwise), and `.config/nextest.toml` (`quick`: fail fast, failures only).
+
+**Measured** on a 4-core Linux container: `cargo nextest run --release --workspace --features yapocis/rustcpu` builds in 136 s and runs 127 tests in 7 s (one CNN test is 6.8 s). The build needs `CARGO_NET_GIT_FETCH_WITH_CLI=true` behind a proxy, and `gitlab.freedesktop.org` reachable for the patched freetype-sys's FreeType submodule.
+
+**Not verified:** the GPU tiers (no device here).
+
+**Follow-up (same day).** The skill now also lives in plumimpress, yapocis-external and Virtual-Impressionist; SKILL.md lists all seven repos and adds the yapocis-external → impressionist-rs rule (re-export the bundle, port the CPU kernel, run impressionist-rs's tier 0). SKILL.md and affected.py stay identical in all seven.
+
+**CI (same day).** `.github/actions/test-env/action.yml`, a composite action with the cloud environment's setup for a GitHub-hosted runner: the apt packages (cached), Rust with clippy, rustfmt, rust-cache and cargo-nextest, uv and maturin, and `CARGO_PROFILE_*_DEBUG=0`, `CARGO_INCREMENTAL=0`, `COMMONKIT_STORE_MIN_FREE_GB=2`. It lives here because yapocis-rs is public, so every repo's CI can use it. This repo's `build` and `rustcpu` jobs use it in place of their own toolchain and apt steps; their commands are unchanged. `workflow_dispatch` added.
+
+**b3 only (same day).** The maintainer: "No md5 is to be used" and "Drop all MD5 testing. It's legacy." SKILL.md (the same in all seven repos) now says every tier runs b3 only. md5 had been the AI's choice for tier 0/1 when it wrote the skill earlier the same day; the maintainer corrected it. Here: `.test-affected.toml` sets `COMMONKIT_HASH = "b3"`, and CI's `yapocis-rt` step runs once, under b3. `scripts/check-hash-gates.sh` keeps its md5 patterns (they detect hash crates used outside commonkit). Checked by printing tier 0's commands (`COMMONKIT_HASH=b3`) where the diff selects a suite; the CI change runs on this PR.
+
 ### 2026-11-12 — The program-cache key goes through commonkit's hash facade (Claude Opus 5.5)
 
 **What the maintainer asked for.** Layer 1 of plum's plan `2026-11-12-commonkit-hash-facade.md` (§3.2), which the maintainer approved with the rest of the coordinated move ("REALLY,REALLY,REALLY try not to use system libraries directly if they are implementations of swappable algorithms. Hashing is a clear one", D19). commonkit 0.2.0 is released; this repository uses it from crates.io.

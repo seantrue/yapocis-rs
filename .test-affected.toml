@@ -1,0 +1,48 @@
+# affected.py config for yapocis-rs.
+# Tier 0: affected crates, CPU backend only (no device), debug build where it is fast enough.
+# Tier 1: affected crates on this host's GPU backends, release (parity needs it).
+# Tier 2: the CLAUDE.md host command, whole workspace.
+
+[rust]
+runner = "cargo nextest run"
+ignore = ["*.md", "docs/*", ".github/*", "claude-debug/*"]
+
+pre = "run=$(mktemp -d)"
+
+[rust.env]
+COMMONKIT_HASH = "b3"
+COMMONKIT_TEST_RUN = "$run"
+COMMONKIT_STORE_ROOT = "$run/store"
+COMMONKIT_MARK_DIR = "$run/marks"
+YAPOCIS_CACHE = "$run/cache"
+
+[rust.tier0]
+args = "--release --profile quick"
+features = ["yapocis/rustcpu"]
+
+[rust.tier1]
+args = "--release --no-fail-fast"
+features = ["yapocis/rustcpu"]
+
+[rust.tier2]
+args = "--release --no-fail-fast"
+features = ["yapocis/rustcpu"]
+
+[rust.platform.darwin.tier1]
+features = ["yapocis/rustcpu", "yapocis/ocl", "yapocis/metal"]
+
+[rust.platform.darwin.tier2]
+features = ["yapocis/rustcpu", "yapocis/ocl", "yapocis/metal"]
+
+[rust.platform.linux.tier1]
+features = ["yapocis/rustcpu", "yapocis/cuda", "yapocis/ocl"]
+
+[rust.platform.linux.tier2]
+features = ["yapocis/rustcpu", "yapocis/cuda", "yapocis/ocl"]
+
+# The vendored bundle and its parity fixtures are data the yapocis crate's build.rs and tests read;
+# they live under crates/yapocis, so ownership already covers them. bindings/python is outside the
+# workspace: a change there is checked by clippy on its manifest (see the skill), not by nextest.
+[[rust.map]]
+glob = "scripts/check-bundle.sh"
+packages = ["yapocis"]

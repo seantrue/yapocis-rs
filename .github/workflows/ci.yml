@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -16,27 +17,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      # opencl3 links libOpenCL at build time (FreeType is built from source); the shared
+      # test environment (.github/actions/test-env) installs its headers, cached.
+      - uses: ./.github/actions/test-env
         with:
-          components: clippy, rustfmt
-      # opencl3 links libOpenCL at build time (FreeType is built from source)
-      # bounded: when a mirror's DNS fails, apt otherwise retries for ~25 minutes
-      - name: Install OpenCL headers
-        timeout-minutes: 5
-        run: |
-          apt_opts="-o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20"
-          sudo apt-get $apt_opts update
-          sudo apt-get $apt_opts install -y ocl-icd-opencl-dev
-      - uses: Swatinem/rust-cache@v2
+          python: "false"
       - run: cargo fmt --all --check
       - run: cargo build --workspace --all-targets --features yapocis/ocl,yapocis/cuda,yapocis/rustcpu
       - run: cargo clippy --workspace --all-targets --features yapocis/ocl,yapocis/cuda,yapocis/rustcpu -- -D warnings
       - run: cargo test -p yapocis-bundle
-      # The program-cache key follows commonkit's switch: once per algorithm, each with a
-      # fresh store root and mark folder inside a fresh run folder (the hash facade, §3.13).
-      - name: yapocis-rt under md5 and b3
+      # The program-cache key follows commonkit's switch: under b3 (md5 is legacy and not tested),
+      # with a fresh store root and mark folder inside a fresh run folder (the hash facade, §3.13).
+      - name: yapocis-rt under b3
         run: |
-          for algo in md5 b3; do
+          for algo in b3; do
             run=$(mktemp -d)
             COMMONKIT_HASH=$algo COMMONKIT_TEST_RUN=$run COMMONKIT_STORE_ROOT=$run/store \
               COMMONKIT_MARK_DIR=$run/marks YAPOCIS_CACHE=$run/cache \
@@ -55,10 +49,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/test-env
         with:
-          components: clippy
-      - uses: Swatinem/rust-cache@v2
+          python: "false"
       - run: cargo test --release -p yapocis --features rustcpu
       # The Python bindings (Yapocis3's rustcpu backend) live outside the
       # workspace; keep them compiling against yapocis-rt.
