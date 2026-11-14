@@ -23,6 +23,8 @@ Later direction and corrections are credited in the entries below.
 
 **What the AI did.** impressionist-rs's CI (PR #64 there) failed with `unable to find library -lopenblas`, on a run whose apt step was a cache hit. `awalsh128/cache-apt-pkgs-action` restores package files but runs no install scripts by default, and libopenblas-dev's `libopenblas.so` is an update-alternatives link made by its postinst. `.github/actions/test-env/action.yml` now sets `execute_install_scripts: true` and bumps the cache `version` to 3, since the scripts are cached only from a fresh cache (~6 lines). The cause is inferred from the log (cache hit, then the missing link), not confirmed on a runner; impressionist-rs's rerun is the check.
 
+**That fix was incomplete (same day).** impressionist-rs's rerun passed, and the AI reported it as confirming the fix; it didn't: the version bump made that run a cache miss, a real install. The next cached runs (plumimpress #39, Virtual-Impressionist #88) still failed with `-lopenblas`. Their logs showed the install scripts do run after a restore, but libopenblas-pthread-dev's postinst fails creating a slave link into `cmake/openblas/`, a folder the restore doesn't make, so `libopenblas.so` is never linked. test-env now makes `libopenblas.so` and `libopenblas.so.0` from `openblas-pthread/` where they're missing, then runs ldconfig (~16 lines). The next cached run in each repo is the check.
+
 **Defect in AI-written code.** The test-env action, written earlier the same day, cached apt packages without their install scripts; caught by impressionist-rs's CI.
 
 ### 2026-11-13 — test-affected: run the tests a change can reach, in tiers (Claude Opus 5.5)
