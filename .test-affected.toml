@@ -10,7 +10,7 @@ ignore = ["*.md", "docs/*", ".github/*", "claude-debug/*"]
 pre = "run=$(mktemp -d)"
 
 [rust.env]
-COMMONKIT_HASH = "${COMMONKIT_HASH:-md5}"
+COMMONKIT_HASH = "b3"
 COMMONKIT_TEST_RUN = "$run"
 COMMONKIT_STORE_ROOT = "$run/store"
 COMMONKIT_MARK_DIR = "$run/marks"

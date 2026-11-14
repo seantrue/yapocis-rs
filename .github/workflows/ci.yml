@@ -26,11 +26,11 @@ jobs:
       - run: cargo build --workspace --all-targets --features yapocis/ocl,yapocis/cuda,yapocis/rustcpu
       - run: cargo clippy --workspace --all-targets --features yapocis/ocl,yapocis/cuda,yapocis/rustcpu -- -D warnings
       - run: cargo test -p yapocis-bundle
-      # The program-cache key follows commonkit's switch: once per algorithm, each with a
-      # fresh store root and mark folder inside a fresh run folder (the hash facade, §3.13).
-      - name: yapocis-rt under md5 and b3
+      # The program-cache key follows commonkit's switch: under b3 (md5 is legacy and not tested),
+      # with a fresh store root and mark folder inside a fresh run folder (the hash facade, §3.13).
+      - name: yapocis-rt under b3
         run: |
-          for algo in md5 b3; do
+          for algo in b3; do
             run=$(mktemp -d)
             COMMONKIT_HASH=$algo COMMONKIT_TEST_RUN=$run COMMONKIT_STORE_ROOT=$run/store \
               COMMONKIT_MARK_DIR=$run/marks YAPOCIS_CACHE=$run/cache \
