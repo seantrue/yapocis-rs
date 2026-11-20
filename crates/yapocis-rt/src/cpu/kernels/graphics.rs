@@ -82,6 +82,18 @@ pub(super) fn line(c: &[f32], rdist: f32, aa: f32, x: f32, y: f32) -> Cover {
     let threshold = (rdist as f64 * 0.5 + 0.5) as f32;
     let threshold2 = threshold * threshold;
     let (sx, sy, ex, ey) = (c[0], c[1], c[2], c[3]);
+    // A pixel outside the line's bounding box, widened by the half width, the
+    // antialiased edge and a pixel's margin (for rounding below), can't be drawn.
+    let reach = threshold + aa.max(0.0) + 1.0;
+    if outside_box(
+        x,
+        y,
+        [sx.min(ex), sy.min(ey)],
+        [sx.max(ex), sy.max(ey)],
+        reach,
+    ) {
+        return Cover::Skip;
+    }
     let linemag2 = dxdy2(ex, ey, sx, sy);
     let (dx, dy) = (ex - sx, ey - sy);
     let (ux, uy) = ((x - sx) * dx, (y - sy) * dy);
@@ -131,6 +143,21 @@ pub(super) fn circle(c: &[f32], aa: f32, x: f32, y: f32) -> Cover {
     }
 }
 
+/// Whether `(x, y)` lies outside the box from `lo` to `hi`, widened by `reach`: the
+/// kernels' `point.x < fmin(...) - reach || ...` early-out. The caller nests `min`/`max`
+/// as the kernels nest `fmin`/`fmax`, which agree on NaN: one NaN operand is ignored,
+/// an all-NaN bound is NaN, and comparisons with it are false (not skipped).
+fn outside_box(x: f32, y: f32, lo: [f32; 2], hi: [f32; 2], reach: f32) -> bool {
+    x < lo[0] - reach || x > hi[0] + reach || y < lo[1] - reach || y > hi[1] + reach
+}
+
+/// Whether `(x, y)` lies outside the triangle's box, widened by a pixel's margin.
+fn outside_triangle_box(x: f32, y: f32, [v1, v2, v3]: [[f32; 2]; 3]) -> bool {
+    let lo = [v1[0].min(v2[0]).min(v3[0]), v1[1].min(v2[1]).min(v3[1])];
+    let hi = [v1[0].max(v2[0]).max(v3[0]), v1[1].max(v2[1]).max(v3[1])];
+    outside_box(x, y, lo, hi, 1.0)
+}
+
 /// `signex(p1, p2, p3)`.
 fn signex(p1: [f32; 2], p2: [f32; 2], p3: [f32; 2]) -> f32 {
     (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
@@ -149,10 +176,15 @@ fn triangle_soft(p: [f32; 2], [v1, v2, v3]: [[f32; 2]; 3], aa: f32) -> Cover {
     Cover::Soft(smoothstep(0.0, aa, edge_dist))
 }
 
-/// Triangle `c`; pixels on any edge are inside.
+/// Triangle `c`; pixels on any edge are inside. A zero-area (collinear) triangle
+/// covers nothing: the sign test would otherwise draw the whole line through its
+/// corners, across the image.
 pub(super) fn triangle(c: &[f32], aa: f32, x: f32, y: f32) -> Cover {
     let p = [x, y];
     let [v1, v2, v3] = vertices(c);
+    if signex(v1, v2, v3) == 0.0 || outside_triangle_box(x, y, [v1, v2, v3]) {
+        return Cover::Skip;
+    }
     let d = [signex(p, v1, v2), signex(p, v2, v3), signex(p, v3, v1)];
     let has_neg = d.iter().any(|&d| d < 0.0);
     let has_pos = d.iter().any(|&d| d > 0.0);
@@ -203,7 +235,7 @@ fn tri_inside(p: [f32; 2], [v1, v2, v3]: [[f32; 2]; 3]) -> bool {
 pub(super) fn mesh_triangle(c: &[f32], aa: f32, x: f32, y: f32) -> Cover {
     let p = [x, y];
     let v = vertices(c);
-    if !tri_inside(p, v) {
+    if outside_triangle_box(x, y, v) || !tri_inside(p, v) {
         Cover::Skip
     } else if aa > 0.0 {
         triangle_soft(p, v, aa)

@@ -17,6 +17,20 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-20 — Graphics: zero-area triangles draw nothing, and shapes outside a pixel's reach are skipped (Claude Opus 5.5)
+
+**What the maintainer asked for.** The Yapocis3 change below ("1,2": the zero-area triangle fix and the bounding-box early-out), with "Remember to test on rustcpu backend as well", then CUDA.
+
+**What the AI did.** Yapocis3 `aebc713` (branch fix/graphics-bbox-triangles) makes the OpenCL, Metal and CUDA `triangles` kernels skip zero-area triangles, which they drew as a line across the image, and makes `lines`, `triangles` and `mesh_triangles` skip a shape when the pixel is outside its widened bounding box. Here:
+- The CPU port (`yapocis-rt/src/cpu/kernels/graphics.rs`, shared with `graphics4`, ~34 LOC): `line` returns `Skip` outside the line's box widened by threshold, antialiased edge and a pixel; `triangle` skips zero `signex(v1, v2, v3)` and its box; `mesh_triangle` its box. rustcpu drew the same stray line as the GPU kernels, since it follows the OpenCL text.
+- The bundle re-exported from `aebc713`: the six graphics sources and their manifest hashes, plus `yapocis_version` 1.1.0 -> 1.2.0 (vendored, not counted); `SOURCE` updated. `scripts/check-bundle.sh` against that ref: up to date.
+
+**Defect in AI-written code, caught in review.** The first version of the box test folded each bound from `f32::INFINITY`, so a primitive whose coordinates were all NaN was skipped, where OpenCL's `fmin(NaN, NaN)` is NaN and its comparisons false (not skipped). Caught by the AI rereading the port before any test ran; the bounds now nest `min`/`max` as the kernels nest `fmin`/`fmax`.
+
+**Checked.** With a `yapocis_rs` wheel built from this port (impressionist-rs's bindings, `--config .cargo/siblings.toml`): Graphics1/Graphics4 lines, triangles and mesh triangles drawn before and after on rustcpu change no pixel except degenerate triangles, which now equal numbax's (empty) output; the same holds on Metal, OpenCL, CUDA and NVIDIA OpenCL for Yapocis3's kernels. Here, tier 1 (`test-affected`, rustcpu, ocl, metal on the M4 MacBook): 92 of 93 passed, graphics1/graphics4/kerneldraw/paths parity included, against the existing fixtures. On yellowfin, a fresh clone with this change: `cargo test --release -p yapocis -p yapocis-rt --features yapocis/cuda,yapocis/ocl,yapocis/rustcpu`: graphics1/graphics4/kerneldraw parity pass on CUDA and NVIDIA OpenCL (RTX 3080); three CPU-vs-GPU comparisons fail, `cpu_filters_match_gpu_backends` (anisodiff.filterImage3 against CUDA: element 2781, got 0.997, want 0), `simplex_matches_gpu` and `fft_paths_match_gpu`, and fail the same way on a fresh clone of main without this change, so they predate it; not investigated further. rustcpu's own speed-up on 10,000 shapes at 1624x1620: lines 3.3-3.7x, mesh_triangles 2.4-3.8x, triangles 0.9-1.2x; rustcpu still takes 7-12 s there, where numbax, which scans each shape's box, takes 0.015 s.
+
+**Investigated and ruled out.** The one tier-1 failure, `yapocis-rt cache::tests::hash_is_what_was_asked`, fails the same way with this change stashed. `affected.py` makes the run folder with `mktemp -d` under macOS's `/var`, a symlink to `/private/var`, and commonkit's `check_isolated` reports the store root `/var/.../store` "not inside" `COMMONKIT_TEST_RUN`; with the run folder given as its real path the test passes. Not fixed here.
+
 ### 2026-11-13 — test-env runs the apt packages' install scripts after a cache restore (Claude Opus 5.5)
 
 **What the maintainer asked for.** "yapocis-rs: yes" to the proposed fix, after impressionist-rs's first CI run failed to link.

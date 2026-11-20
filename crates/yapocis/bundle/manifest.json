@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "yapocis_version": "1.1.0",
+  "yapocis_version": "1.2.0",
   "backends": [
     "ocl",
     "metal",
@@ -13154,7 +13154,7 @@
       "sources": {
         "ocl": {
           "path": "ocl/graphics.cl",
-          "sha256": "907e16a6b6304febcc88852e257748df97b47c0e8838b20cdd7494b76d41a7ec",
+          "sha256": "72a72741cd39670326d045c1473c5235f09b730f5d39931aedd872832778521a",
           "build_options": [
             "-w",
             "-cl-fast-relaxed-math",
@@ -13165,12 +13165,12 @@
         },
         "metal": {
           "path": "metal/graphics.metal",
-          "sha256": "b4e4908713669d88bb20523073b95a6fcc58158204afefbfeb450ff3a04a8c78",
+          "sha256": "aeb28bb6161464fb592c9c52ea516e978112f07cd7156e29021c296aa7a32f4d",
           "build_options": []
         },
         "cuda": {
           "path": "cuda/graphics.cu",
-          "sha256": "221e9f880abaa529bbd147b5d03aec8dd43081e24d7536e29b404b2f2803b43d",
+          "sha256": "d9c14691d09188d324fa810858d2a9899d87272e82dc8dfcc4ce55e9728d3c5d",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",
@@ -14479,7 +14479,7 @@
       "sources": {
         "ocl": {
           "path": "ocl/graphics4.cl",
-          "sha256": "fc3f582c052c56b9d04178bbb1dbd7b34bbb769cb7027b7bf739fc237e9f61e1",
+          "sha256": "2ffeb39db8cbfc3cf672f58c7d08789c67aea44b7749c1f3df6d37a2c9f08e2a",
           "build_options": [
             "-w",
             "-cl-fast-relaxed-math",
@@ -14490,12 +14490,12 @@
         },
         "metal": {
           "path": "metal/graphics4.metal",
-          "sha256": "cb64f1e0a10ed13e4143b94f58d8f34b6d4298cbac08d333efc1a7164ff8d645",
+          "sha256": "b1a080759c6e5cfb2774c88420591ed3fe2ce9d6e43637eb2202bb423bdcfb7c",
           "build_options": []
         },
         "cuda": {
           "path": "cuda/graphics4.cu",
-          "sha256": "0b555048d0d2b82f6d225ab6ff996c140673939f533f6199e8114742f81577ee",
+          "sha256": "ca51df165fb6164703b941017487c050c5a0adc9fafbc05aa41c312ac16c85d8",
           "build_options": [
             "--use_fast_math",
             "--diag-suppress=177",
