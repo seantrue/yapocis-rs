@@ -1,7 +1,7 @@
 #!/bin/sh
 # The hash gates (the commonkit hash facade, D10): every digest goes through commonkit::digest.
 #  1. hash crates appear in the build only under commonkit;
-#  2. bindings/python has exactly one commonkit, 0.2.x;
+#  2. bindings/python has exactly one commonkit, 0.3.x;
 #  3. no source outside tests and hash-allowlist.txt names an algorithm or a hash library.
 set -u
 cd "$(dirname "$0")/.."
@@ -16,8 +16,8 @@ for c in md-5 md5 sha1 sha2 blake3; do
     if [ -n "$bad" ]; then echo "hash gate: $c is used outside commonkit in $m: $bad"; status=1; fi
   done
 done
-n=$(cargo tree --manifest-path bindings/python/Cargo.toml --locked -i commonkit -e normal,build --depth 0 | grep -c '^commonkit v0\.2\.')
-[ "$n" = 1 ] || { echo "hash gate: bindings/python has $n commonkit v0.2 lines, want 1"; status=1; }
+n=$(cargo tree --manifest-path bindings/python/Cargo.toml --locked -i commonkit -e normal,build --depth 0 | grep -c '^commonkit v0\.3\.')
+[ "$n" = 1 ] || { echo "hash gate: bindings/python has $n commonkit v0.3 lines, want 1"; status=1; }
 pat='hashlib|import blake3|blake3::|sha2::|sha1::|md5::|Sha256::|Algo::Md5|Algo::B3|fixed::|build::both|"md5:|"b3:'
 for f in $(git ls-files '*.rs' '*.py' | grep -v '/tests/' | grep -vxF -f hash-allowlist.txt); do
   # Rust: the in-file `#[cfg(test)]` module is a test.

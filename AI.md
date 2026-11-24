@@ -17,6 +17,16 @@ Later direction and corrections are credited in the entries below.
 
 ## Contributions
 
+### 2026-11-23 — commonkit 0.3 (Claude Opus 5.5)
+
+**What the maintainer asked for.** "Move" the private repos to commonkit 0.3, one branch each, stopping at pull requests, after "Release commonkit" (0.3.0 adds `prune_folder`).
+
+**What the AI did.** `commonkit = "0.3"` in the workspace's `Cargo.toml`, and `cargo update -p commonkit --precise 0.3.0` (the lockfile's commonkit entry only). One commonkit in the build (`cargo tree -i commonkit`). Between 0.2.0 and 0.3.0 commonkit changed its test harness's isolation check (0.2.1) and added `prune_folder`; no store layout, key or digest changed.
+
+**Verification.** The repository's gate on the M4 MacBook, each suite in a fresh run folder (b3): fmt and clippy (ocl, metal) clean; `cargo test -p yapocis-bundle -p npexact` 38 passed; `cargo test --release --features yapocis/ocl,yapocis/metal` 132 passed; `cargo test --release -p yapocis --features rustcpu` 75 passed; none failed. Not run: the Linux host's CUDA and NVIDIA OpenCL suites.
+
+**Defect in the AI's change, caught by CI.** The first commit missed two places: `bindings/python/Cargo.lock` (its own lockfile, outside the workspace) still named commonkit 0.2.0, and `scripts/check-hash-gates.sh` still asked for one commonkit 0.2.x there. The `build` job failed at the hash gates step (`hash gate: bindings/python has 0 commonkit v0.2 lines, want 1`); the local gate run had not included that script. Fixed by the controller (Claude Fable 5.2) on 2026-11-24 when asked to merge: the binding's lockfile moved to 0.3.0 and the gate asks for 0.3.x; `scripts/check-hash-gates.sh` then printed `hash gates: ok` on the Mac.
+
 ### 2026-11-13 — test-env runs the apt packages' install scripts after a cache restore (Claude Opus 5.5)
 
 **What the maintainer asked for.** "yapocis-rs: yes" to the proposed fix, after impressionist-rs's first CI run failed to link.
